@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import type { Activity, View } from '../types';
 import { CalendarIcon, LocationIcon, UsersIcon } from './icons';
@@ -11,41 +9,50 @@ interface ActivityCardProps {
 
 export const ActivityCard: React.FC<ActivityCardProps> = ({ activity, setView }) => {
   const { id, title, image, date, location, participants, maxParticipants } = activity;
+
   const spotsLeft = maxParticipants - participants.length;
+  const isFull = spotsLeft <= 0;
+  
+  const getBadgeColor = () => {
+    if (isFull) return 'bg-red-100 text-red-800';
+    if (spotsLeft <= 3) return 'bg-amber-100 text-amber-800';
+    return 'bg-slate-100 text-slate-800';
+  };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden transform hover:-translate-y-1 transition-transform duration-300 ease-in-out flex flex-col">
-      <img className="h-56 w-full object-cover" src={image} alt={title} />
-      <div className="p-6 flex flex-col flex-grow">
-        <h3 className="text-xl font-semibold mb-2 text-gray-800">{title}</h3>
-        <div className="space-y-3 text-gray-600 text-sm mb-4">
+    <div
+      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer group border-t-4 border-primary"
+      onClick={() => setView({ type: 'ACTIVITY_DETAIL', activityId: id })}
+    >
+      <div className="relative">
+        <img className="h-48 w-full object-cover" src={image} alt={title} />
+        <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-sm font-semibold ${getBadgeColor()}`}>
+          {isFull ? 'Complet' : `${spotsLeft} place${spotsLeft > 1 ? 's' : ''} disponible${spotsLeft > 1 ? 's' : ''}`}
+        </div>
+      </div>
+      <div className="p-4">
+        <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors">{title}</h3>
+        <div className="mt-2 space-y-2 text-sm text-gray-600">
           <div className="flex items-center">
-            <CalendarIcon className="h-4 w-4 mr-2 text-primary" />
-            <span>{date.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} à {date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+            <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
+            <span>{new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
           </div>
           <div className="flex items-center">
-            <LocationIcon className="h-4 w-4 mr-2 text-primary" />
+            <LocationIcon className="h-4 w-4 mr-2 text-gray-400" />
             <a 
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:underline hover:text-primary-hover transition-colors"
+              className="truncate hover:underline"
+              onClick={(e) => e.stopPropagation()} // Prevent card click when clicking link
             >
               {location}
             </a>
           </div>
           <div className="flex items-center">
-            <UsersIcon className="h-4 w-4 mr-2 text-primary" />
-            <span>{spotsLeft} / {maxParticipants} places restantes</span>
+            <UsersIcon className="h-4 w-4 mr-2 text-gray-400" />
+            <span>{participants.length} / {maxParticipants} participants</span>
           </div>
-        </div>
-        <div className="mt-auto">
-            <button
-                onClick={() => setView({ type: 'ACTIVITY_DETAIL', activityId: id })}
-                className="w-full px-4 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus transition-colors"
-            >
-                Voir les détails
-            </button>
         </div>
       </div>
     </div>
