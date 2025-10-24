@@ -1,15 +1,32 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import type { Activity, User } from '../types';
+import { CreateActivityForm } from './CreateActivityForm';
+import { PlusIcon } from './icons';
 
 interface AdminPanelProps {
   users: User[];
   activities: Activity[];
   onDeleteUser: (userId: string) => void;
   onDeleteActivity: (activityId: string) => void;
+  onCreateActivity: (activity: Omit<Activity, 'id' | 'participants' | 'comments'>, onSuccess?: () => void) => void;
+  currentUser: User | null;
 }
 
-export const AdminPanel: React.FC<AdminPanelProps> = ({ users, activities, onDeleteUser, onDeleteActivity }) => {
+export const AdminPanel: React.FC<AdminPanelProps> = ({ users, activities, onDeleteUser, onDeleteActivity, onCreateActivity, currentUser }) => {
+  const [isCreating, setIsCreating] = useState(false);
+
+  if (isCreating) {
+    return (
+      <CreateActivityForm
+        currentUser={currentUser}
+        onCreateActivity={(activityData) => {
+          onCreateActivity(activityData, () => setIsCreating(false));
+        }}
+        onCancel={() => setIsCreating(false)}
+      />
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h2 className="text-3xl font-bold tracking-tight text-gray-900 mb-8">Panneau d'administration</h2>
@@ -59,7 +76,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ users, activities, onDel
 
         {/* Activities Section */}
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-xl font-semibold mb-4">Activités ({activities.length})</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-semibold">Activités ({activities.length})</h3>
+            <button
+              onClick={() => setIsCreating(true)}
+              className="flex items-center gap-2 px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus"
+            >
+              <PlusIcon className="h-4 w-4" />
+              Ajouter
+            </button>
+          </div>
            <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">

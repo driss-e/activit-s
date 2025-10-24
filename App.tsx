@@ -4,14 +4,16 @@ import { Dashboard } from './components/Dashboard';
 import { ActivityDetail } from './components/ActivityDetail';
 import { CreateActivityForm } from './components/CreateActivityForm';
 import { AdminPanel } from './components/AdminPanel';
+import { LandingPage } from './components/LandingPage';
+import { AuthModal } from './components/LoginModal';
 import type { Activity, User, View, Comment } from './types';
 
 // --- MOCK DATA ---
 const MOCK_USERS: User[] = [
-    { id: '1', name: 'Alice', avatar: 'https://picsum.photos/seed/alice/100/100', role: 'user' },
-    { id: '2', name: 'Bob (Admin)', avatar: 'https://picsum.photos/seed/bob/100/100', role: 'admin' },
-    { id: '3', name: 'Charlie', avatar: 'https://picsum.photos/seed/charlie/100/100', role: 'user' },
-    { id: '4', name: 'Diana', avatar: 'https://picsum.photos/seed/diana/100/100', role: 'user' },
+    { id: '1', name: 'Alice', email: 'alice@example.com', password: 'password', avatar: 'https://picsum.photos/seed/alice/100/100', role: 'user' },
+    { id: '2', name: 'Bob (Admin)', email: 'admin@example.com', password: 'admin', avatar: 'https://picsum.photos/seed/bob/100/100', role: 'admin' },
+    { id: '3', name: 'Charlie', email: 'charlie@example.com', password: 'password', avatar: 'https://picsum.photos/seed/charlie/100/100', role: 'user' },
+    { id: '4', name: 'Diana', email: 'diana@example.com', password: 'password', avatar: 'https://picsum.photos/seed/diana/100/100', role: 'user' },
 ];
 
 const MOCK_ACTIVITIES: Activity[] = [
@@ -62,16 +64,45 @@ function App() {
   const [activities, setActivities] = useState<Activity[]>(MOCK_ACTIVITIES);
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [view, setView] = useState<View>({ type: 'DASHBOARD' });
+  const [isAuthModalOpen, setAuthModalOpen] = useState(false);
+  const [initialAuthMode, setInitialAuthMode] = useState<'login' | 'register'>('login');
 
   const handleLogin = useCallback((user: User) => {
     setCurrentUser(user);
+    if (user.role === 'admin') {
+      setView({ type: 'ADMIN_PANEL' });
+    } else {
+      setView({ type: 'DASHBOARD' });
+    }
+  }, []);
+
+  const handleRegister = useCallback((newUser: Omit<User, 'id' | 'avatar' | 'role'>) => {
+    const user: User = {
+      ...newUser,
+      id: `user_${Date.now()}`,
+      avatar: `https://picsum.photos/seed/${newUser.name}/100/100`,
+      role: 'user',
+    };
+    setUsers(prev => [...prev, user]);
+    setCurrentUser(user);
+    setView({ type: 'DASHBOARD' });
   }, []);
 
   const handleLogout = useCallback(() => {
     setCurrentUser(null);
+    setView({ type: 'DASHBOARD' });
   }, []);
 
-  const handleCreateActivity = useCallback((newActivityData: Omit<Activity, 'id' | 'participants' | 'comments'>) => {
+  const handleOpenLogin = () => {
+    setInitialAuthMode('login');
+    setAuthModalOpen(true);
+  };
+  const handleOpenRegister = () => {
+    setInitialAuthMode('register');
+    setAuthModalOpen(true);
+  };
+
+  const handleCreateActivity = useCallback((newActivityData: Omit<Activity, 'id' | 'participants' | 'comments'>, onSuccess?: () => void) => {
     const newActivity: Activity = {
       ...newActivityData,
       id: `act_${Date.now()}`,
@@ -79,7 +110,11 @@ function App() {
       comments: [],
     };
     setActivities(prev => [newActivity, ...prev]);
-    setView({ type: 'DASHBOARD' });
+    if (onSuccess) {
+      onSuccess();
+    } else {
+      setView({ type: 'DASHBOARD' });
+    }
   }, []);
 
   const handleJoinActivity = useCallback((activityId: string, userId: string) => {
@@ -127,7 +162,8 @@ function App() {
           .filter(act => act.organizer.id !== userId) 
           .map(act => ({
             ...act,
-            participants: act.participants.filter(pId => pId !== userId)
+            participants: act.participants.filter(pId => pId !== userId),
+            comments: act.comments.filter(comment => comment.author.id !== userId)
           }))
       );
 
@@ -143,12 +179,29 @@ function App() {
      }
   }, []);
 
+  if (!currentUser) {
+    return (
+      <>
+        <LandingPage onLoginClick={handleOpenLogin} onRegisterClick={handleOpenRegister} />
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          onLogin={handleLogin}
+          onRegister={handleRegister}
+          users={users}
+          initialMode={initialAuthMode}
+        />
+      </>
+    );
+  }
+
   const renderContent = () => {
     switch (view.type) {
       case 'ACTIVITY_DETAIL':
         const activity = activities.find(act => act.id === view.activityId);
         if (!activity) {
-          return <div className="text-center p-8">Activité non trouvée.</div>;
+          setView({ type: 'DASHBOARD' });
+          return null;
         }
         return <ActivityDetail
                   activity={activity}
@@ -163,10 +216,11 @@ function App() {
         return <CreateActivityForm
                   currentUser={currentUser}
                   onCreateActivity={handleCreateActivity}
-                  setView={setView}
+                  onCancel={() => setView({type: 'DASHBOARD'})}
                 />;
       case 'ADMIN_PANEL':
         if(currentUser?.role !== 'admin') {
+            setView({ type: 'DASHBOARD' });
             return <div className="text-center p-8">Accès refusé.</div>
         }
         return <AdminPanel 
@@ -174,6 +228,8 @@ function App() {
                   activities={activities} 
                   onDeleteUser={handleDeleteUser} 
                   onDeleteActivity={handleDeleteActivity}
+                  onCreateActivity={handleCreateActivity}
+                  currentUser={currentUser}
                 />;
       case 'DASHBOARD':
       default:
@@ -185,7 +241,6 @@ function App() {
     <div className="min-h-screen bg-light">
       <Header 
         currentUser={currentUser}
-        onLogin={handleLogin}
         onLogout={handleLogout}
         setView={setView}
       />

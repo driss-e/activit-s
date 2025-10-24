@@ -4,6 +4,8 @@ export interface User {
   name: string;
   avatar: string;
   role: 'user' | 'admin';
+  email: string;
+  password?: string;
 }
 
 export interface Comment {
