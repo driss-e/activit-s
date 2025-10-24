@@ -41,9 +41,22 @@ const initialActivities: Activity[] = [
       participants: [],
       organizer: { id: 'u2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?u=u2' },
       comments: [],
-    }
+    },
+    {
+      id: 'a3',
+      title: 'Pique-nique au parc La Fontaine',
+      description: 'Profitons du beau temps avec un grand pique-nique. Chacun amène quelque chose à partager !',
+      location: 'Parc La Fontaine, Montréal',
+      date: new Date('2024-08-25T13:00:00'),
+      image: 'https://images.unsplash.com/photo-1525899295193-8f0a0c538357?auto=format&fit=crop&w=800&q=60',
+      maxParticipants: 20,
+      participants: ['u1'],
+      organizer: { id: 'u1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?u=u1' },
+      comments: [],
+    },
 ];
 
+const ACTIVITIES_PER_PAGE = 4;
 
 const App: React.FC = () => {
     const [users, setUsers] = useState<User[]>(() => {
@@ -80,6 +93,8 @@ const App: React.FC = () => {
     });
 
     const [view, setView] = useState<View>({ type: 'DASHBOARD' });
+    const [searchQuery, setSearchQuery] = useState('');
+    const [visibleCount, setVisibleCount] = useState(ACTIVITIES_PER_PAGE);
 
     useEffect(() => {
         localStorage.setItem('users', JSON.stringify(users));
@@ -97,6 +112,10 @@ const App: React.FC = () => {
         }
     }, [currentUser]);
     
+    useEffect(() => {
+        setVisibleCount(ACTIVITIES_PER_PAGE);
+    }, [searchQuery]);
+
     // Auth Handlers
     const handleLogin = async (email: string, password?: string) => {
         const user = users.find(u => u.email === email && u.password === password);
@@ -198,6 +217,10 @@ const App: React.FC = () => {
         onSuccess?.();
     };
 
+    const handleLoadMore = () => {
+        setVisibleCount(prevCount => prevCount + ACTIVITIES_PER_PAGE);
+    };
+
     // Admin Handlers
     const handleDeleteUser = (userId: string) => {
         if (window.confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) {
@@ -274,7 +297,27 @@ const App: React.FC = () => {
                 ) : <div>Utilisateur non trouvé</div>;
             case 'DASHBOARD':
             default:
-                return <Dashboard activities={activities} setView={setView} />;
+                const filteredAndSortedActivities = (activities || [])
+                    .filter(activity =>
+                        activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        activity.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        activity.location.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+                const activitiesToShow = filteredAndSortedActivities.slice(0, visibleCount);
+                const hasMore = filteredAndSortedActivities.length > visibleCount;
+
+                return (
+                    <Dashboard 
+                        activities={activitiesToShow} 
+                        setView={setView} 
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        onLoadMore={handleLoadMore}
+                        hasMore={hasMore}
+                    />
+                );
         }
     };
 
