@@ -79,7 +79,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateP
     const url = platform === 'instagram' ? `https://instagram.com/${value}` : `https://facebook.com/${value}`;
     const Icon = platform === 'instagram' ? InstagramIcon : FacebookIcon;
     return (
-        <a href={url} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-primary">
+        <a href={url} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-primary dark:text-slate-400 dark:hover:text-primary-hover">
             <Icon className="h-6 w-6" />
         </a>
     );
@@ -93,12 +93,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateP
       </button>
 
       {notification && (
-        <div className="mb-4 p-3 bg-green-100 text-green-800 rounded-md transition-opacity duration-300">
+        <div className="mb-4 p-3 bg-green-100 text-green-800 rounded-md transition-opacity duration-300 dark:bg-green-900/50 dark:text-green-300">
             {notification}
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden dark:bg-slate-800">
         <div className="p-8">
             <div className="md:flex md:items-center md:gap-8">
                 <div className="md:w-1/3 text-center mb-6 md:mb-0">
@@ -114,14 +114,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateP
                 </div>
                 <div className="md:w-2/3">
                     <div className="flex justify-between items-start">
-                        <h2 className="text-3xl font-bold text-gray-800">{currentUser.name}</h2>
+                        <h2 className="text-3xl font-bold text-gray-800 dark:text-slate-100">{currentUser.name}</h2>
                         {!isEditing && (
-                             <button onClick={() => setIsEditing(true)} className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                             <button onClick={() => setIsEditing(true)} className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-600">
                                 Modifier le profil
                             </button>
                         )}
                     </div>
-                    <p className="text-gray-500 mt-1">{currentUser.email}</p>
+                    <p className="text-gray-500 mt-1 dark:text-slate-400">{currentUser.email}</p>
                      <div className="mt-4 flex items-center gap-4">
                         {renderSocialLink('instagram', currentUser.instagram)}
                         {renderSocialLink('facebook', currentUser.facebook)}
@@ -132,38 +132,38 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateP
             <form onSubmit={handleSubmit} className="mt-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nom complet</label>
-                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100" />
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-slate-300">Nom complet</label>
+                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50" />
                     </div>
                      <div>
-                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Téléphone</label>
-                        <input type="tel" name="phone" id="phone" value={formData.phone || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100" />
+                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-slate-300">Téléphone</label>
+                        <input type="tel" name="phone" id="phone" value={formData.phone || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50" />
                     </div>
                      <div>
-                        <label htmlFor="gender" className="block text-sm font-medium text-gray-700">Genre</label>
-                        <select name="gender" id="gender" value={formData.gender} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100">
+                        <label htmlFor="gender" className="block text-sm font-medium text-gray-700 dark:text-slate-300">Genre</label>
+                        <select name="gender" id="gender" value={formData.gender} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50">
                             <option value="prefer_not_to_say">Ne pas préciser</option>
                             <option value="male">Homme</option>
                             <option value="female">Femme</option>
                         </select>
                     </div>
                     <div>
-                        <label htmlFor="hobbies" className="block text-sm font-medium text-gray-700">Hobbies</label>
-                        <input type="text" name="hobbies" id="hobbies" value={formData.hobbies || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100" />
+                        <label htmlFor="hobbies" className="block text-sm font-medium text-gray-700 dark:text-slate-300">Hobbies</label>
+                        <input type="text" name="hobbies" id="hobbies" value={formData.hobbies || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50" />
                     </div>
                      <div>
-                        <label htmlFor="instagram" className="block text-sm font-medium text-gray-700">Instagram (pseudo)</label>
-                        <input type="text" name="instagram" id="instagram" value={formData.instagram || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100" />
+                        <label htmlFor="instagram" className="block text-sm font-medium text-gray-700 dark:text-slate-300">Instagram (pseudo)</label>
+                        <input type="text" name="instagram" id="instagram" value={formData.instagram || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50" />
                     </div>
                      <div>
-                        <label htmlFor="facebook" className="block text-sm font-medium text-gray-700">Facebook (ID de profil)</label>
-                        <input type="text" name="facebook" id="facebook" value={formData.facebook || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100" />
+                        <label htmlFor="facebook" className="block text-sm font-medium text-gray-700 dark:text-slate-300">Facebook (ID de profil)</label>
+                        <input type="text" name="facebook" id="facebook" value={formData.facebook || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50" />
                     </div>
                 </div>
 
                 {isEditing && (
                     <div className="mt-8 flex justify-end gap-4">
-                        <button type="button" onClick={handleCancel} className="px-6 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <button type="button" onClick={handleCancel} className="px-6 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 dark:bg-slate-600 dark:text-slate-300 dark:border-slate-500 dark:hover:bg-slate-500">
                             Annuler
                         </button>
                         <button type="submit" className="px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus">
