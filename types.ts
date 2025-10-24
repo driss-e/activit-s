@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   name: string;
@@ -6,6 +5,10 @@ export interface User {
   role: 'user' | 'admin';
   email: string;
   password?: string;
+  passwordResetToken?: string | null;
+  passwordResetExpires?: Date | null;
+  isVerified: boolean;
+  verificationToken?: string | null;
 }
 
 export interface Comment {
@@ -33,4 +36,5 @@ export type View =
   | { type: 'DASHBOARD' }
   | { type: 'ACTIVITY_DETAIL'; activityId: string }
   | { type: 'CREATE_ACTIVITY' }
-  | { type: 'ADMIN_PANEL' };
+  | { type: 'ADMIN_PANEL' }
+  | { type: 'PROFILE' };

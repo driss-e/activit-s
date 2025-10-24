@@ -45,6 +45,17 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, onLogout, setView }
                 {isDropdownOpen && (
                   <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
                       <>
+                        <a
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setView({ type: 'PROFILE' });
+                            setDropdownOpen(false);
+                          }}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Mon Profil
+                        </a>
                         {currentUser.role === 'admin' && (
                           <a
                             href="#"
