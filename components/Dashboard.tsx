@@ -1,5 +1,4 @@
-// FIX: Replaced placeholder content with a functional Dashboard component.
-import React, { useState, useMemo } from 'react';
+import React, { useRef, useCallback } from 'react';
 import type { Activity, View } from '../types';
 import { ActivityCard } from './ActivityCard';
 import { SearchIcon, InboxIcon } from './icons';
@@ -7,30 +6,34 @@ import { SearchIcon, InboxIcon } from './icons';
 interface DashboardProps {
   activities: Activity[];
   setView: (view: View) => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  filterNext7Days: boolean;
+  setFilterNext7Days: (value: boolean) => void;
+  onLoadMore: () => void;
+  hasMore: boolean;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ activities, setView }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');
-
-  const filteredActivities = useMemo(() => {
-    return activities
-      .filter(activity => {
-        const matchesSearch = activity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          activity.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          activity.location.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        const now = new Date();
-        if (filter === 'upcoming') {
-          return matchesSearch && new Date(activity.date) >= now;
-        }
-        if (filter === 'past') {
-          return matchesSearch && new Date(activity.date) < now;
-        }
-        return matchesSearch;
-      })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [activities, searchTerm, filter]);
+export const Dashboard: React.FC<DashboardProps> = ({
+  activities,
+  setView,
+  searchQuery,
+  setSearchQuery,
+  filterNext7Days,
+  setFilterNext7Days,
+  onLoadMore,
+  hasMore
+}) => {
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastActivityElementRef = useCallback((node: HTMLDivElement) => {
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        onLoadMore();
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [hasMore, onLoadMore]);
 
   return (
     <div className="bg-light min-h-screen">
@@ -43,40 +46,61 @@ export const Dashboard: React.FC<DashboardProps> = ({ activities, setView }) => 
                     </div>
                     <input
                         type="text"
-                        placeholder="Rechercher une activité..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Rechercher par titre ou description..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                         className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm"
                     />
                 </div>
-                <div className="flex-shrink-0">
-                    <select
-                        value={filter}
-                        onChange={(e) => setFilter(e.target.value)}
-                        className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white"
-                    >
-                        <option value="all">Toutes les activités</option>
-                        <option value="upcoming">À venir</option>
-                        <option value="past">Passées</option>
-                    </select>
+                <div className="flex-shrink-0 flex items-center space-x-2">
+                    <input
+                        id="filter-7-days"
+                        type="checkbox"
+                        checked={filterNext7Days}
+                        onChange={(e) => setFilterNext7Days(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="filter-7-days" className="text-sm text-gray-700">
+                        Dans les 7 prochains jours
+                    </label>
                 </div>
             </div>
         </div>
 
-        {filteredActivities.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredActivities.map((activity) => (
-              <ActivityCard key={activity.id} activity={activity} setView={setView} />
-            ))}
-          </div>
+        {activities.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {activities.map((activity, index) => {
+                if (activities.length === index + 1) {
+                  return (
+                    <div ref={lastActivityElementRef} key={activity.id}>
+                       <ActivityCard activity={activity} setView={setView} />
+                    </div>
+                  );
+                } else {
+                  return <ActivityCard key={activity.id} activity={activity} setView={setView} />;
+                }
+              })}
+            </div>
+            {hasMore && (
+              <div className="text-center py-8">
+                <button 
+                  onClick={onLoadMore}
+                  className="px-6 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-hover transition-colors"
+                >
+                  Charger plus d'activités
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-16">
             <div className="inline-block bg-primary/10 p-5 rounded-full">
               <InboxIcon className="h-12 w-12 text-primary" />
             </div>
-            <h3 className="mt-4 text-xl font-semibold text-gray-800">Aucune activité trouvée</h3>
+            <h3 className="mt-4 text-xl font-semibold text-gray-800">Aucun résultat trouvé</h3>
             <p className="text-gray-500 mt-2">
-              {searchTerm ? "Essayez de modifier votre recherche." : "Il n'y a pas d'activités pour le moment. Pourquoi ne pas en créer une ?"}
+              {searchQuery || filterNext7Days ? "Essayez de modifier vos filtres ou votre recherche." : "Il n'y a pas d'activités pour le moment."}
             </p>
           </div>
         )}

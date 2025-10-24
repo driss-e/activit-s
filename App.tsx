@@ -1,5 +1,4 @@
-// FIX: Replaced placeholder content with a functional App component to serve as the application root.
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { User, Activity, View, Comment as CommentType, ProfileUpdateData } from './types';
 import { LandingPage } from './components/LandingPage';
 import { Header } from './components/Header';
@@ -17,56 +16,41 @@ const MOCK_USERS: User[] = [
   { id: '3', name: 'Charlie', email: 'charlie@example.com', password: 'password', role: 'user', isVerified: false, avatar: 'https://i.pravatar.cc/150?u=3' },
 ];
 
-const MOCK_ACTIVITIES: Activity[] = [
-  {
-    id: 'a1',
-    title: 'Randonnée au Mont-Royal',
-    description: 'Une belle randonnée pour profiter de la nature et de la vue sur la ville. Ouvert à tous les niveaux.',
-    location: 'Parc du Mont-Royal, Montréal, QC',
-    date: new Date(new Date().setDate(new Date().getDate() + 7)),
-    image: 'https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&q=80&w=1470',
-    maxParticipants: 15,
-    participants: ['1'],
-    organizer: { id: '1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?u=1' },
-    comments: [
-      { id: 'c1', author: { id: '2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?u=2' }, text: 'Super idée !', rating: 5, createdAt: new Date() },
-    ],
-  },
-  {
-    id: 'a2',
-    title: 'Atelier de Poterie',
-    description: 'Venez créer vos propres poteries dans une ambiance conviviale. Matériel fourni.',
-    location: 'Atelier Créatif, 123 Rue des Arts, Montréal, QC',
-    date: new Date(new Date().setDate(new Date().getDate() + 14)),
-    image: 'https://images.unsplash.com/photo-1565253540443-de3a6c9d4b02?auto=format&fit=crop&q=80&w=1470',
-    maxParticipants: 8,
-    participants: ['2'],
-    organizer: { id: '2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?u=2' },
-    comments: [],
-  },
-   {
-    id: 'a3',
-    title: 'Pique-nique au Parc Lafontaine',
-    description: 'Rejoignez-nous pour un pique-nique décontracté. Apportez votre plat préféré à partager !',
-    location: 'Parc Lafontaine, Montréal, QC',
-    date: new Date(new Date().setDate(new Date().getDate() - 2)), // Past event
-    image: 'https://images.unsplash.com/photo-1594950645472-3c13a2283a38?auto=format&fit=crop&q=80&w=1470',
-    maxParticipants: 20,
-    participants: ['1', '2'],
-    organizer: { id: '1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?u=1' },
-    comments: [
-        { id: 'c2', author: { id: '2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?u=2' }, text: 'C\'était génial, merci Alice !', rating: 5, createdAt: new Date(new Date().setDate(new Date().getDate() - 1)) },
-    ],
-  }
-];
+const createMockActivities = (): Activity[] => {
+    const activities: Activity[] = [];
+    for (let i = 0; i < 20; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() + (i * 2) - 5); // Spread dates around today
+        const participantsCount = Math.floor(Math.random() * 10);
+        activities.push({
+            id: `a${i + 1}`,
+            title: `Activité #${i + 1}: ${['Découverte', 'Atelier', 'Sortie', 'Rencontre'][i % 4]}`,
+            description: `Description de l'activité #${i + 1}. Une expérience unique à ne pas manquer.`,
+            location: ['Parc Lafontaine', 'Mont-Royal', 'Vieux-Port', 'Plateau Mont-Royal'][i % 4] + ', Montréal',
+            date: date,
+            image: `https://picsum.photos/seed/${i + 1}/600/400`,
+            maxParticipants: 10,
+            participants: Array.from({ length: participantsCount }, (_, k) => String((k % 3) + 1)),
+            organizer: { id: '1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?u=1' },
+            comments: [],
+        });
+    }
+    return activities.sort((a,b) => b.date.getTime() - a.date.getTime());
+}
+
 
 // --- MAIN APP COMPONENT ---
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
-  const [activities, setActivities] = useState<Activity[]>(MOCK_ACTIVITIES);
+  const [activities, setActivities] = useState<Activity[]>(createMockActivities());
   const [view, setView] = useState<View>({ type: 'DASHBOARD' });
+  
+  // State for search, filter and pagination
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterNext7Days, setFilterNext7Days] = useState(false);
+  const [visibleActivitiesCount, setVisibleActivitiesCount] = useState(8);
 
   // Simulate session persistence
   useEffect(() => {
@@ -161,7 +145,7 @@ const App: React.FC = () => {
       participants: [],
       comments: [],
     };
-    setActivities(prev => [newActivity, ...prev]);
+    setActivities(prev => [newActivity, ...prev].sort((a, b) => b.date.getTime() - a.date.getTime()));
     setView({ type: 'DASHBOARD' });
   };
   
@@ -202,6 +186,10 @@ const App: React.FC = () => {
     }
   };
 
+  const handleLoadMore = () => {
+    setVisibleActivitiesCount(prev => prev + 8);
+  };
+
 
   // Admin
   const handleDeleteUser = (userId: string) => {
@@ -225,6 +213,28 @@ const App: React.FC = () => {
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
   };
   
+  const filteredActivities = useMemo(() => {
+    let result = activities;
+
+    if (searchQuery) {
+        result = result.filter(activity =>
+            activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            activity.description.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }
+    
+    if (filterNext7Days) {
+        const now = new Date();
+        const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        result = result.filter(activity => {
+            const activityDate = new Date(activity.date);
+            return activityDate >= now && activityDate <= oneWeekFromNow;
+        });
+    }
+
+    return result;
+  }, [activities, searchQuery, filterNext7Days]);
+
 
   // --- RENDER LOGIC ---
 
@@ -242,7 +252,17 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (view.type) {
       case 'DASHBOARD':
-        return <Dashboard activities={activities} setView={setView} />;
+        const visibleActivities = filteredActivities.slice(0, visibleActivitiesCount);
+        return <Dashboard 
+            activities={visibleActivities} 
+            setView={setView} 
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            filterNext7Days={filterNext7Days}
+            setFilterNext7Days={setFilterNext7Days}
+            onLoadMore={handleLoadMore}
+            hasMore={visibleActivitiesCount < filteredActivities.length}
+        />;
       case 'ACTIVITY_DETAIL':
         const activity = activities.find(a => a.id === view.activityId);
         return activity ? <ActivityDetail 
@@ -279,7 +299,16 @@ const App: React.FC = () => {
           onBack={() => setView({ type: 'DASHBOARD' })}
         />
       default:
-        return <Dashboard activities={activities} setView={setView} />;
+        return <Dashboard 
+            activities={filteredActivities.slice(0, visibleActivitiesCount)} 
+            setView={setView}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            filterNext7Days={filterNext7Days}
+            setFilterNext7Days={setFilterNext7Days}
+            onLoadMore={handleLoadMore}
+            hasMore={visibleActivitiesCount < filteredActivities.length}
+         />;
     }
   };
 
