@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import type { Activity, User, Comment as CommentType } from '../types';
 import { CalendarIcon, LocationIcon, UsersIcon, StarIcon, ArrowLeftIcon } from './icons';
@@ -94,7 +95,14 @@ export const ActivityDetail: React.FC<ActivityDetailProps> = ({ activity, curren
               </div>
               <div className="flex items-center text-gray-700">
                 <LocationIcon className="h-5 w-5 mr-3 text-primary" />
-                <span>{location}</span>
+                <a 
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline hover:text-primary-hover transition-colors"
+                >
+                  {location}
+                </a>
               </div>
               <div className="flex items-center text-gray-700">
                 <UsersIcon className="h-5 w-5 mr-3 text-primary" />

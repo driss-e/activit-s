@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import type { Activity, View } from '../types';
 import { CalendarIcon, LocationIcon, UsersIcon } from './icons';
@@ -24,7 +25,14 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({ activity, setView })
           </div>
           <div className="flex items-center">
             <LocationIcon className="h-4 w-4 mr-2 text-primary" />
-            <span>{location}</span>
+            <a 
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline hover:text-primary-hover transition-colors"
+            >
+              {location}
+            </a>
           </div>
           <div className="flex items-center">
             <UsersIcon className="h-4 w-4 mr-2 text-primary" />

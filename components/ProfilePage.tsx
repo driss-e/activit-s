@@ -1,109 +1,178 @@
 import React, { useState, useEffect } from 'react';
-import type { User } from '../types';
-import { ArrowLeftIcon } from './icons';
+import type { User, ProfileUpdateData } from '../types';
+import { ArrowLeftIcon, InstagramIcon, FacebookIcon } from './icons';
 
 interface ProfilePageProps {
   currentUser: User;
-  onUpdateProfile: (userId: string, newName: string, newAvatar: string) => void;
+  onUpdateProfile: (userId: string, data: ProfileUpdateData) => void;
   onBack: () => void;
 }
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateProfile, onBack }) => {
-  const [name, setName] = useState(currentUser.name);
-  const [avatar, setAvatar] = useState(currentUser.avatar);
-  const [newAvatarFile, setNewAvatarFile] = useState<string | null>(null);
-  const [message, setMessage] = useState('');
+  const [formData, setFormData] = useState<ProfileUpdateData>({
+    name: currentUser.name || '',
+    avatar: currentUser.avatar || '',
+    phone: currentUser.phone || '',
+    gender: currentUser.gender || 'prefer_not_to_say',
+    hobbies: currentUser.hobbies || '',
+    instagram: currentUser.instagram || '',
+    facebook: currentUser.facebook || '',
+  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [notification, setNotification] = useState('');
 
   useEffect(() => {
-    // Reset form if currentUser changes
-    setName(currentUser.name);
-    setAvatar(currentUser.avatar);
-    setNewAvatarFile(null);
+    setFormData({
+      name: currentUser.name || '',
+      avatar: currentUser.avatar || '',
+      phone: currentUser.phone || '',
+      gender: currentUser.gender || 'prefer_not_to_say',
+      hobbies: currentUser.hobbies || '',
+      instagram: currentUser.instagram || '',
+      facebook: currentUser.facebook || '',
+    });
   }, [currentUser]);
-
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        setMessage("L'image est trop volumineuse (max 2Mo).");
-        return;
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit
+            alert("Le fichier est trop volumineux. Veuillez choisir une image de moins de 2 Mo.");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFormData(prev => ({ ...prev, avatar: reader.result as string }));
+        };
+        reader.readAsDataURL(file);
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewAvatarFile(reader.result as string);
-        setMessage('');
-      };
-      reader.readAsDataURL(file);
-    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateProfile(currentUser.id, name, newAvatarFile || avatar);
-    setMessage('Profil mis à jour avec succès !');
+    onUpdateProfile(currentUser.id, formData);
+    setIsEditing(false);
+    setNotification('Profil mis à jour avec succès !');
+    setTimeout(() => setNotification(''), 3000);
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      name: currentUser.name || '',
+      avatar: currentUser.avatar || '',
+      phone: currentUser.phone || '',
+      gender: currentUser.gender || 'prefer_not_to_say',
+      hobbies: currentUser.hobbies || '',
+      instagram: currentUser.instagram || '',
+      facebook: currentUser.facebook || '',
+    });
+    setIsEditing(false);
+  };
+  
+  const renderSocialLink = (platform: 'instagram' | 'facebook', value?: string) => {
+    if (!value) return null;
+    const url = platform === 'instagram' ? `https://instagram.com/${value}` : `https://facebook.com/${value}`;
+    const Icon = platform === 'instagram' ? InstagramIcon : FacebookIcon;
+    return (
+        <a href={url} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-primary">
+            <Icon className="h-6 w-6" />
+        </a>
+    );
   };
 
   return (
-    <div className="container mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-8">
+    <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
       <button onClick={onBack} className="flex items-center gap-2 mb-6 text-primary hover:underline">
         <ArrowLeftIcon />
         Retour
       </button>
-      <div className="bg-white p-8 rounded-xl shadow-lg">
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Mon Profil</h2>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="flex flex-col items-center space-y-4">
-            <img 
-              src={newAvatarFile || avatar} 
-              alt="Avatar"
-              className="h-32 w-32 rounded-full object-cover ring-4 ring-primary/20"
-            />
-            <div>
-              <label htmlFor="avatar-upload" className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                Changer d'avatar
-              </label>
-              <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+
+      {notification && (
+        <div className="mb-4 p-3 bg-green-100 text-green-800 rounded-md transition-opacity duration-300">
+            {notification}
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="p-8">
+            <div className="md:flex md:items-center md:gap-8">
+                <div className="md:w-1/3 text-center mb-6 md:mb-0">
+                    <img src={formData.avatar} alt={formData.name} className="h-40 w-40 rounded-full mx-auto shadow-md" />
+                    {isEditing && (
+                        <div className="mt-4">
+                            <label htmlFor="avatar-upload" className="cursor-pointer text-sm text-primary hover:underline">
+                                Changer de photo
+                            </label>
+                            <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                        </div>
+                    )}
+                </div>
+                <div className="md:w-2/3">
+                    <div className="flex justify-between items-start">
+                        <h2 className="text-3xl font-bold text-gray-800">{currentUser.name}</h2>
+                        {!isEditing && (
+                             <button onClick={() => setIsEditing(true)} className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                Modifier le profil
+                            </button>
+                        )}
+                    </div>
+                    <p className="text-gray-500 mt-1">{currentUser.email}</p>
+                     <div className="mt-4 flex items-center gap-4">
+                        {renderSocialLink('instagram', currentUser.instagram)}
+                        {renderSocialLink('facebook', currentUser.facebook)}
+                     </div>
+                </div>
             </div>
-          </div>
+            
+            <form onSubmit={handleSubmit} className="mt-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nom complet</label>
+                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100" />
+                    </div>
+                     <div>
+                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Téléphone</label>
+                        <input type="tel" name="phone" id="phone" value={formData.phone || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100" />
+                    </div>
+                     <div>
+                        <label htmlFor="gender" className="block text-sm font-medium text-gray-700">Genre</label>
+                        <select name="gender" id="gender" value={formData.gender} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100">
+                            <option value="prefer_not_to_say">Ne pas préciser</option>
+                            <option value="male">Homme</option>
+                            <option value="female">Femme</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="hobbies" className="block text-sm font-medium text-gray-700">Hobbies</label>
+                        <input type="text" name="hobbies" id="hobbies" value={formData.hobbies || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100" />
+                    </div>
+                     <div>
+                        <label htmlFor="instagram" className="block text-sm font-medium text-gray-700">Instagram (pseudo)</label>
+                        <input type="text" name="instagram" id="instagram" value={formData.instagram || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100" />
+                    </div>
+                     <div>
+                        <label htmlFor="facebook" className="block text-sm font-medium text-gray-700">Facebook (ID de profil)</label>
+                        <input type="text" name="facebook" id="facebook" value={formData.facebook || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100" />
+                    </div>
+                </div>
 
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nom</label>
-            <input 
-              type="text" 
-              id="name" 
-              value={name} 
-              onChange={(e) => setName(e.target.value)} 
-              required 
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" 
-            />
-          </div>
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email (non modifiable)</label>
-            <input 
-              type="email" 
-              id="email" 
-              value={currentUser.email} 
-              disabled 
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-500 sm:text-sm" 
-            />
-          </div>
-
-          {message && (
-            <div className={`p-3 rounded-md ${message.includes('succès') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-              {message}
-            </div>
-          )}
-
-          <div>
-            <button 
-              type="submit" 
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus"
-            >
-              Enregistrer les modifications
-            </button>
-          </div>
-        </form>
+                {isEditing && (
+                    <div className="mt-8 flex justify-end gap-4">
+                        <button type="button" onClick={handleCancel} className="px-6 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Annuler
+                        </button>
+                        <button type="submit" className="px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus">
+                            Enregistrer
+                        </button>
+                    </div>
+                )}
+            </form>
+        </div>
       </div>
     </div>
   );

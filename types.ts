@@ -9,6 +9,13 @@ export interface User {
   passwordResetExpires?: Date | null;
   isVerified: boolean;
   verificationToken?: string | null;
+
+  // New optional profile fields
+  phone?: string;
+  gender?: 'male' | 'female' | 'prefer_not_to_say';
+  hobbies?: string;
+  instagram?: string;
+  facebook?: string;
 }
 
 export interface Comment {
@@ -31,6 +38,17 @@ export interface Activity {
   comments: Comment[];
   organizer: Pick<User, 'id' | 'name' | 'avatar'>;
 }
+
+export type ProfileUpdateData = {
+  name: string;
+  avatar: string;
+  phone: string;
+  gender: 'male' | 'female' | 'prefer_not_to_say';
+  hobbies: string;
+  instagram: string;
+  facebook: string;
+};
+
 
 export type View = 
   | { type: 'DASHBOARD' }
