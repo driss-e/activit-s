@@ -40,35 +40,40 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
 
   return (
-    <div className="bg-light min-h-screen dark:bg-slate-900">
+    <div className="bg-light min-h-screen dark:bg-dark">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-8 dark:bg-slate-800">
+        <div className="bg-white p-6 rounded-2xl shadow-sm mb-8 dark:bg-stone-800 text-center">
+            <h1 className="text-3xl sm:text-4xl font-bold font-heading text-stone-800 dark:text-stone-100">Découvrez les Prochaines Sorties</h1>
+            <p className="mt-2 text-stone-600 dark:text-stone-400">Trouvez une activité qui vous passionne et rencontrez de nouvelles personnes.</p>
+        </div>
+
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm mb-8 dark:bg-stone-800 sticky top-[65px] z-40">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="relative flex-grow">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <SearchIcon className="h-5 w-5 text-gray-400 dark:text-slate-500" />
+                        <SearchIcon className="h-5 w-5 text-stone-400 dark:text-stone-500" />
                     </div>
                     <input
                         type="text"
-                        placeholder="Rechercher par titre ou description..."
+                        placeholder="Rechercher une randonnée, un musée, un jeu..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:placeholder-slate-400"
+                        className="block w-full pl-10 pr-3 py-2 border border-stone-300 rounded-lg leading-5 bg-white placeholder-stone-500 focus:outline-none focus:placeholder-stone-400 focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm dark:bg-stone-700 dark:border-stone-600 dark:text-stone-200 dark:placeholder-stone-400"
                     />
                 </div>
-                <div className="flex-shrink-0 flex items-center space-x-2">
+                <div className="flex-shrink-0 flex items-center space-x-3 bg-stone-100 p-1 rounded-lg dark:bg-stone-900/50">
+                    <label 
+                        htmlFor="filter-7-days" 
+                        className="text-sm text-stone-700 dark:text-stone-300 cursor-pointer pl-2">
+                        7 prochains jours
+                    </label>
                     <input
                         id="filter-7-days"
                         type="checkbox"
                         checked={filterNext7Days}
                         onChange={(e) => setFilterNext7Days(e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:bg-slate-600 dark:border-slate-500"
+                        className="h-4 w-4 rounded border-stone-300 text-primary focus:ring-primary dark:bg-stone-600 dark:border-stone-500"
                     />
-                    <label 
-                        htmlFor="filter-7-days" 
-                        className="text-sm text-gray-700 dark:text-slate-300">
-                        Dans les 7 prochains jours
-                    </label>
                 </div>
             </div>
         </div>
@@ -77,15 +82,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {activities.map((activity, index) => {
-                if (activities.length === index + 1) {
-                  return (
-                    <div ref={lastActivityElementRef} key={activity.id}>
-                       <ActivityCard activity={activity} setView={setView} />
-                    </div>
-                  );
-                } else {
-                  return <ActivityCard key={activity.id} activity={activity} setView={setView} />;
-                }
+                const isLastElement = activities.length === index + 1;
+                return (
+                  <div ref={isLastElement ? lastActivityElementRef : null} key={activity.id}>
+                     <ActivityCard activity={activity} setView={setView} />
+                  </div>
+                );
               })}
             </div>
             {hasMore && (
@@ -93,7 +95,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <button 
                   onClick={onLoadMore}
                   disabled={loading}
-                  className="px-6 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-hover transition-colors disabled:bg-slate-400 disabled:cursor-wait flex items-center justify-center mx-auto"
+                  className="px-6 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-hover transition-colors disabled:bg-stone-400 disabled:cursor-wait flex items-center justify-center mx-auto"
                 >
                   {loading ? (
                     <>
@@ -110,7 +112,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             )}
              {!hasMore && activities.length > 0 && (
-              <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+              <div className="text-center py-8 text-stone-500 dark:text-stone-400">
                 <p>Vous avez atteint la fin de la liste.</p>
               </div>
             )}
@@ -120,8 +122,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="inline-block bg-primary/10 p-5 rounded-full">
               <InboxIcon className="h-12 w-12 text-primary" />
             </div>
-            <h3 className="mt-4 text-xl font-semibold text-gray-800 dark:text-slate-200">Aucun résultat trouvé</h3>
-            <p className="text-gray-500 mt-2 dark:text-slate-400">
+            <h3 className="mt-4 text-xl font-semibold text-stone-800 dark:text-stone-200">Aucun résultat trouvé</h3>
+            <p className="text-stone-500 mt-2 dark:text-stone-400">
               {searchQuery || filterNext7Days ? "Essayez de modifier vos filtres ou votre recherche." : "Il n'y a pas d'activités pour le moment."}
             </p>
           </div>

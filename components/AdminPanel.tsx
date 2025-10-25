@@ -1,5 +1,3 @@
-
-
 // FIX: Provide full content for the AdminPanel component.
 import React, { useState } from 'react';
 import type { User, Activity, View } from '../types';
@@ -18,13 +16,13 @@ interface AdminPanelProps {
 }
 
 const StatCard: React.FC<{ title: string; value: number | string; icon: React.ReactNode }> = ({ title, value, icon }) => (
-    <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md flex items-center gap-4">
+    <div className="bg-white dark:bg-stone-800 p-6 rounded-xl shadow-sm flex items-center gap-4">
         <div className="bg-primary/10 text-primary p-3 rounded-full">
             {icon}
         </div>
         <div>
-            <p className="text-sm text-gray-500 dark:text-slate-400">{title}</p>
-            <p className="text-2xl font-bold text-gray-800 dark:text-slate-100">{value}</p>
+            <p className="text-sm text-stone-500 dark:text-stone-400">{title}</p>
+            <p className="text-2xl font-bold text-stone-800 dark:text-stone-100">{value}</p>
         </div>
     </div>
 );
@@ -98,22 +96,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ users, activities, onDel
                             <LineChart data={activityCreationData} title="Activités créées par mois" />
                         </div>
 
-                        <div className="mt-8 bg-white p-6 rounded-lg shadow-md dark:bg-slate-800">
-                            <h3 className="text-xl font-semibold mb-4 dark:text-slate-200">Activités Récentes</h3>
-                            <ul className="divide-y divide-gray-200 dark:divide-slate-700">
+                        <div className="mt-8 bg-white p-6 rounded-lg shadow-md dark:bg-stone-800">
+                            <h3 className="text-xl font-semibold mb-4 dark:text-stone-200">Activités Récentes</h3>
+                            <ul className="divide-y divide-stone-200 dark:divide-stone-700">
                                 {recentActivities.map(activity => (
                                     <li key={activity.id} className="py-3 flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-3 min-w-0">
                                             <img className="h-10 w-10 rounded-md object-cover flex-shrink-0" src={activity.image} alt={activity.title} />
                                             <div className="min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 dark:text-slate-200 truncate">{activity.title}</p>
-                                                <p className="text-sm text-gray-500 dark:text-slate-400 truncate">{activity.location}</p>
+                                                <p className="text-sm font-medium text-stone-900 dark:text-stone-200 truncate">{activity.title}</p>
+                                                <p className="text-sm text-stone-500 dark:text-stone-400 truncate">{activity.location}</p>
                                             </div>
                                         </div>
-                                        <span className="text-sm text-gray-500 dark:text-slate-400">{activity.createdAt.toLocaleDateString()}</span>
+                                        <span className="text-sm text-stone-500 dark:text-stone-400">{activity.createdAt.toLocaleDateString()}</span>
                                     </li>
                                 ))}
-                                {recentActivities.length === 0 && <p className="text-center text-gray-500 dark:text-slate-400 py-4">Aucune activité récente.</p>}
+                                {recentActivities.length === 0 && <p className="text-center text-stone-500 dark:text-stone-400 py-4">Aucune activité récente.</p>}
                             </ul>
                         </div>
                     </div>
@@ -129,7 +127,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ users, activities, onDel
                 className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                     isActive 
                     ? 'bg-primary text-white' 
-                    : 'text-gray-600 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-700'
+                    : 'text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700'
                 }`}
             >
                 {label}
@@ -139,8 +137,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ users, activities, onDel
 
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h2 className="text-3xl font-bold mb-4 dark:text-slate-100">Panneau d'administration</h2>
-          <div className="mb-6 border-b border-gray-200 dark:border-slate-700">
+          <h2 className="text-3xl font-bold font-heading mb-4 dark:text-stone-100">Panneau d'administration</h2>
+          <div className="mb-6 border-b border-stone-200 dark:border-stone-700">
             <nav className="flex space-x-2" aria-label="Tabs">
                 <TabButton section="dashboard" label="Tableau de bord" />
                 <TabButton section="users" label="Utilisateurs" />
@@ -172,7 +170,7 @@ const UserManagement: React.FC<{ users: User[], onDeleteUser: (userId: string) =
                 className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-colors ${
                   isActive
                     ? 'bg-primary text-white shadow'
-                    : 'text-slate-600 hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-600/80'
+                    : 'text-stone-600 hover:bg-white/60 dark:text-stone-300 dark:hover:bg-stone-600/80'
                 }`}
             >
                 {label}
@@ -181,29 +179,29 @@ const UserManagement: React.FC<{ users: User[], onDeleteUser: (userId: string) =
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-md dark:bg-slate-800">
+        <div className="bg-white p-6 rounded-lg shadow-md dark:bg-stone-800">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-                <h3 className="text-xl font-semibold dark:text-slate-200">Gérer les Utilisateurs ({filteredUsers.length})</h3>
-                <div className="flex space-x-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-900/50">
+                <h3 className="text-xl font-semibold dark:text-stone-200">Gérer les Utilisateurs ({filteredUsers.length})</h3>
+                <div className="flex space-x-1 rounded-lg bg-stone-100 p-1 dark:bg-stone-900/50">
                     <FilterButton filter="all" label="Tous" />
                     <FilterButton filter="active" label="Actif" />
                     <FilterButton filter="inactive" label="Inactif" />
                 </div>
             </div>
             <div className="max-h-96 overflow-y-auto">
-            <ul className="divide-y divide-gray-200 dark:divide-slate-700">
+            <ul className="divide-y divide-stone-200 dark:divide-stone-700">
                 {filteredUsers.map(user => (
                 <li key={user.id} className="py-3 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                         <img className="h-10 w-10 rounded-full flex-shrink-0" src={user.avatar} alt={user.name} />
                         <div className="min-w-0">
-                            <p className="text-sm font-medium text-gray-900 dark:text-slate-200 truncate">{user.name}</p>
-                            <p className="text-sm text-gray-500 dark:text-slate-400 truncate">{user.email}</p>
+                            <p className="text-sm font-medium text-stone-900 dark:text-stone-200 truncate">{user.name}</p>
+                            <p className="text-sm text-stone-500 dark:text-stone-400 truncate">{user.email}</p>
                         </div>
                     </div>
 
                     <div className="hidden md:block">
-                        <p className="text-sm text-gray-500 dark:text-slate-400">
+                        <p className="text-sm text-stone-500 dark:text-stone-400">
                             {user.createdAt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </p>
                     </div>
@@ -238,17 +236,17 @@ const UserManagement: React.FC<{ users: User[], onDeleteUser: (userId: string) =
 };
 
 const ActivityManagement: React.FC<{ activities: Activity[], onDeleteActivity: (activityId: string) => void }> = ({ activities, onDeleteActivity }) => (
-     <div className="bg-white p-6 rounded-lg shadow-md dark:bg-slate-800">
-        <h3 className="text-xl font-semibold mb-4 dark:text-slate-200">Gérer les Activités ({activities.length})</h3>
+     <div className="bg-white p-6 rounded-lg shadow-md dark:bg-stone-800">
+        <h3 className="text-xl font-semibold mb-4 dark:text-stone-200">Gérer les Activités ({activities.length})</h3>
         <div className="max-h-96 overflow-y-auto">
-        <ul className="divide-y divide-gray-200 dark:divide-slate-700">
+        <ul className="divide-y divide-stone-200 dark:divide-stone-700">
             {activities.map(activity => (
             <li key={activity.id} className="py-3 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">
                 <img className="h-10 w-10 rounded-md object-cover flex-shrink-0" src={activity.image} alt={activity.title} />
                 <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-slate-200 truncate">{activity.title}</p>
-                    <p className="text-sm text-gray-500 dark:text-slate-400 truncate">{activity.location}</p>
+                    <p className="text-sm font-medium text-stone-900 dark:text-stone-200 truncate">{activity.title}</p>
+                    <p className="text-sm text-stone-500 dark:text-stone-400 truncate">{activity.location}</p>
                 </div>
                 </div>
                 <button

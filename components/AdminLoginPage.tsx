@@ -23,23 +23,23 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onLogin, setView
     };
 
     return (
-        <div className="min-h-screen bg-light flex flex-col justify-center py-12 sm:px-6 lg:px-8 dark:bg-slate-900">
+        <div className="min-h-screen bg-light flex flex-col justify-center py-12 sm:px-6 lg:px-8 dark:bg-dark">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-slate-100">
+                <h2 className="mt-6 text-center text-3xl font-extrabold font-heading text-stone-900 dark:text-stone-100">
                     Portail Administrateur
                 </h2>
-                <p className="mt-2 text-center text-sm text-gray-600 dark:text-slate-400">
+                <p className="mt-2 text-center text-sm text-stone-600 dark:text-stone-400">
                     Connectez-vous à votre compte administrateur
                 </p>
             </div>
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow-xl rounded-lg sm:px-10 dark:bg-slate-800">
+                <div className="bg-white py-8 px-4 shadow-xl rounded-lg sm:px-10 dark:bg-stone-800">
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         {error && <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm dark:bg-red-900/50 dark:text-red-300">{error}</div>}
                         
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-slate-300">
+                            <label htmlFor="email" className="block text-sm font-medium text-stone-700 dark:text-stone-300">
                                 Adresse e-mail
                             </label>
                             <div className="mt-1">
@@ -51,13 +51,13 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onLogin, setView
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
+                                    className="appearance-none block w-full px-3 py-2 border border-stone-300 rounded-md shadow-sm placeholder-stone-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm dark:bg-stone-700 dark:border-stone-600 dark:text-stone-200"
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-slate-300">
+                            <label htmlFor="password" className="block text-sm font-medium text-stone-700 dark:text-stone-300">
                                 Mot de passe
                             </label>
                             <div className="mt-1">
@@ -69,7 +69,7 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onLogin, setView
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"
+                                    className="appearance-none block w-full px-3 py-2 border border-stone-300 rounded-md shadow-sm placeholder-stone-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm dark:bg-stone-700 dark:border-stone-600 dark:text-stone-200"
                                 />
                             </div>
                         </div>
@@ -86,10 +86,10 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onLogin, setView
                     <div className="mt-6">
                         <div className="relative">
                             <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-gray-300 dark:border-slate-600" />
+                                <div className="w-full border-t border-stone-300 dark:border-stone-600" />
                             </div>
                             <div className="relative flex justify-center text-sm">
-                                <span className="px-2 bg-white text-gray-500 dark:bg-slate-800 dark:text-slate-400">
+                                <span className="px-2 bg-white text-stone-500 dark:bg-stone-800 dark:text-stone-400">
                                     Ou
                                 </span>
                             </div>

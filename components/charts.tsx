@@ -13,9 +13,9 @@ interface BarChartProps {
 export const BarChart: React.FC<BarChartProps> = ({ data, title }) => {
     if (!data || data.length === 0) {
         return (
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-slate-200">{title}</h3>
-                <p className="text-gray-500 dark:text-slate-400">Pas de données à afficher.</p>
+            <div className="bg-white dark:bg-stone-800 p-6 rounded-lg shadow-md">
+                <h3 className="text-lg font-semibold mb-4 text-stone-800 dark:text-stone-200">{title}</h3>
+                <p className="text-stone-500 dark:text-stone-400">Pas de données à afficher.</p>
             </div>
         );
     }
@@ -27,8 +27,8 @@ export const BarChart: React.FC<BarChartProps> = ({ data, title }) => {
     const chartWidth = data.length * (barWidth + barMargin);
 
     return (
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md overflow-x-auto">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-slate-200">{title}</h3>
+        <div className="bg-white dark:bg-stone-800 p-6 rounded-lg shadow-md overflow-x-auto">
+            <h3 className="text-lg font-semibold mb-4 text-stone-800 dark:text-stone-200">{title}</h3>
             <svg viewBox={`0 0 ${chartWidth} ${chartHeight + 40}`} className="min-w-full">
                 <g>
                     {data.map((item, index) => {
@@ -50,7 +50,7 @@ export const BarChart: React.FC<BarChartProps> = ({ data, title }) => {
                                     x={x + barWidth / 2}
                                     y={chartHeight + 20}
                                     textAnchor="middle"
-                                    className="text-xs fill-current text-gray-600 dark:text-slate-400"
+                                    className="text-xs fill-current text-stone-600 dark:text-stone-400"
                                 >
                                     {item.label}
                                 </text>
@@ -58,7 +58,7 @@ export const BarChart: React.FC<BarChartProps> = ({ data, title }) => {
                                     x={x + barWidth / 2}
                                     y={y - 5}
                                     textAnchor="middle"
-                                    className="text-xs font-bold fill-current text-gray-800 dark:text-slate-200"
+                                    className="text-xs font-bold fill-current text-stone-800 dark:text-stone-200"
                                 >
                                     {item.value}
                                 </text>
@@ -79,9 +79,9 @@ interface LineChartProps {
 export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
     if (!data || data.length < 2) {
         return (
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-slate-200">{title}</h3>
-                <p className="text-gray-500 dark:text-slate-400">Données insuffisantes pour afficher le graphique.</p>
+            <div className="bg-white dark:bg-stone-800 p-6 rounded-lg shadow-md">
+                <h3 className="text-lg font-semibold mb-4 text-stone-800 dark:text-stone-200">{title}</h3>
+                <p className="text-stone-500 dark:text-stone-400">Données insuffisantes pour afficher le graphique.</p>
             </div>
         );
     }
@@ -97,8 +97,8 @@ export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
     const linePath = data.map((point, i) => `${getX(i)},${getY(point.value)}`).join(' ');
 
     return (
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-md overflow-x-auto">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-slate-200">{title}</h3>
+        <div className="bg-white dark:bg-stone-800 p-6 rounded-lg shadow-md overflow-x-auto">
+            <h3 className="text-lg font-semibold mb-4 text-stone-800 dark:text-stone-200">{title}</h3>
             <svg viewBox={`0 0 ${chartWidth} ${chartHeight + 40}`} className="min-w-full">
                 <polyline
                     fill="none"
@@ -120,7 +120,7 @@ export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
                             x={getX(i)}
                             y={chartHeight + 20}
                             textAnchor="middle"
-                            className="text-xs fill-current text-gray-600 dark:text-slate-400"
+                            className="text-xs fill-current text-stone-600 dark:text-stone-400"
                         >
                             {point.label}
                         </text>

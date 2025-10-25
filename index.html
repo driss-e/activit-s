@@ -5,19 +5,33 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SortieEnsemble - Activity Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
+            fontFamily: {
+              sans: ['Poppins', 'sans-serif'],
+              heading: ['Lexend', 'sans-serif'],
+            },
             colors: {
-              primary: '#4f46e5', // indigo-600
-              'primary-hover': '#6366f1', // indigo-500
-              'primary-focus': '#4338ca', // indigo-700
-              secondary: '#475569', // slate-600
-              accent: '#f59e0b', // amber-500
-              light: '#f1f5f9', // slate-100
+              primary: {
+                DEFAULT: '#10b981', // emerald-500
+                hover: '#059669',   // emerald-600
+                focus: '#047857',   // emerald-700
+              },
+              secondary: {
+                DEFAULT: '#475569', // slate-600
+              },
+              accent: {
+                DEFAULT: '#f59e0b', // amber-500
+              },
+              light: '#fafaf9', // stone-50
+              dark: '#1c1917', // stone-900
             }
           }
         }
@@ -34,7 +48,7 @@
 }
 </script>
 </head>
-  <body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-200">
+  <body class="bg-light text-stone-800 dark:bg-dark dark:text-stone-200 font-sans">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

@@ -262,7 +262,7 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="bg-light dark:bg-slate-900">
+        <div className="bg-light dark:bg-dark">
             <Header currentUser={currentUser} setView={setView} onLogout={handleLogout} />
             <main>
                 {renderView()}

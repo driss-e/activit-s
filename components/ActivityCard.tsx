@@ -13,32 +13,35 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({ activity, setView })
   const spotsLeft = maxParticipants - participants.length;
   const isFull = spotsLeft <= 0;
   
-  const getBadgeColor = () => {
-    if (isFull) return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300';
-    if (spotsLeft <= 3) return 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300';
-    return 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200';
+  const getBadgeInfo = () => {
+    if (isFull) return { text: 'Complet', color: 'bg-red-500/80 text-white' };
+    if (spotsLeft <= 3) return { text: `${spotsLeft} place${spotsLeft > 1 ? 's' : ''}`, color: 'bg-accent/80 text-white' };
+    return { text: `${participants.length} / ${maxParticipants}`, color: 'bg-black/50 text-white' };
   };
+
+  const badge = getBadgeInfo();
 
   return (
     <div
-      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer group border-t-4 border-primary dark:bg-slate-800"
+      className="bg-white rounded-xl shadow-sm overflow-hidden transition-all duration-300 cursor-pointer group hover:shadow-xl hover:-translate-y-1 dark:bg-stone-800"
       onClick={() => setView({ type: 'ACTIVITY_DETAIL', activityId: id })}
     >
-      <div className="relative">
-        <img className="h-48 w-full object-cover" src={image || 'https://via.placeholder.com/300'} alt={title} />
-        <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-sm font-semibold ${getBadgeColor()}`}>
-          {isFull ? 'Complet' : `${spotsLeft} place${spotsLeft > 1 ? 's' : ''} disponible${spotsLeft > 1 ? 's' : ''}`}
+      <div className="relative overflow-hidden">
+        <img className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-110" src={image || 'https://via.placeholder.com/300'} alt={title} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+        <div className={`absolute bottom-2 right-2 px-2 py-1 rounded-full text-xs font-bold ${badge.color}`}>
+          {badge.text}
         </div>
       </div>
       <div className="p-4">
-        <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors dark:text-slate-100">{title}</h3>
-        <div className="mt-2 space-y-2 text-sm text-gray-600 dark:text-slate-400">
+        <h3 className="text-lg font-bold font-heading text-stone-900 group-hover:text-primary transition-colors dark:text-stone-100">{title}</h3>
+        <div className="mt-2 space-y-2 text-sm text-stone-600 dark:text-stone-400">
           <div className="flex items-center">
-            <CalendarIcon className="h-4 w-4 mr-2 text-gray-400 dark:text-slate-500" />
-            <span>{new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+            <CalendarIcon className="h-4 w-4 mr-2 text-stone-400 dark:text-stone-500 flex-shrink-0" />
+            <span className="truncate">{new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
           </div>
           <div className="flex items-center">
-            <LocationIcon className="h-4 w-4 mr-2 text-gray-400 dark:text-slate-500" />
+            <LocationIcon className="h-4 w-4 mr-2 text-stone-400 dark:text-stone-500 flex-shrink-0" />
             <a 
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`}
               target="_blank"
@@ -48,10 +51,6 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({ activity, setView })
             >
               {location}
             </a>
-          </div>
-          <div className="flex items-center">
-            <UsersIcon className="h-4 w-4 mr-2 text-gray-400 dark:text-slate-500" />
-            <span>{participants.length} / {maxParticipants} participants</span>
           </div>
         </div>
       </div>

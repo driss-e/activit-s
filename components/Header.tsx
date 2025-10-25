@@ -1,4 +1,3 @@
-
 // FIX: Provide full content for the Header component.
 import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
@@ -15,12 +14,12 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, setView, onLogout }
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="bg-white shadow-md dark:bg-slate-800 sticky top-0 z-50">
+    <header className="bg-light/80 dark:bg-dark/80 backdrop-blur-sm sticky top-0 z-50 border-b border-stone-200/80 dark:border-stone-800/80">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex-shrink-0">
             <h1 
-              className="text-2xl font-bold text-primary cursor-pointer"
+              className="text-2xl font-bold font-heading text-primary cursor-pointer"
               onClick={() => setView({ type: 'DASHBOARD' })}
             >
               SortieEnsemble
@@ -29,7 +28,7 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, setView, onLogout }
           <div className="flex items-center space-x-4">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
+              className="p-2 rounded-full text-stone-500 hover:bg-stone-200/50 dark:text-stone-400 dark:hover:bg-stone-700/50 transition-colors"
               aria-label="Toggle theme"
             >
               {theme === 'light' ? <SunIcon className="h-6 w-6" /> : <MoonIcon className="h-6 w-6" />}
@@ -38,27 +37,27 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, setView, onLogout }
               <div className="flex items-center space-x-4">
                 <button
                   onClick={() => setView({ type: 'CREATE_ACTIVITY' })}
-                  className="px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow hover:bg-primary-hover hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus transition-all duration-200"
+                  className="px-4 py-2 bg-primary text-white font-semibold rounded-lg shadow-sm hover:bg-primary-hover hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus transition-all duration-200 hidden sm:block"
                 >
                   Créer une activité
                 </button>
                 <div className="relative group">
-                    <button onClick={() => setView({ type: 'PROFILE' })} className="flex items-center space-x-2">
-                        <img src={currentUser.avatar} alt={currentUser.name} className="h-9 w-9 rounded-full" />
+                    <button className="flex items-center space-x-2">
+                        <img src={currentUser.avatar} alt={currentUser.name} className="h-9 w-9 rounded-full ring-2 ring-offset-2 ring-offset-light dark:ring-offset-dark ring-primary/50" />
                     </button>
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 hidden group-hover:block dark:bg-slate-700">
-                        <button onClick={() => setView({ type: 'PROFILE' })} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-600">
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-1 z-20 hidden group-hover:block dark:bg-stone-800 border dark:border-stone-700 transition-opacity duration-300">
+                        <button onClick={() => setView({ type: 'PROFILE' })} className="block w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-700">
                             Mon Profil
                         </button>
                         {currentUser.role === 'admin' && (
                           <button 
                             onClick={() => setView({ type: 'ADMIN', section: 'dashboard' })} 
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-600"
+                            className="block w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-700"
                           >
                             Administration
                           </button>
                         )}
-                        <button onClick={onLogout} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-slate-200 dark:hover:bg-slate-600">
+                        <button onClick={onLogout} className="block w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-700">
                             Déconnexion
                         </button>
                     </div>
