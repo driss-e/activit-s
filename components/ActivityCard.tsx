@@ -25,7 +25,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({ activity, setView })
       onClick={() => setView({ type: 'ACTIVITY_DETAIL', activityId: id })}
     >
       <div className="relative">
-        <img className="h-48 w-full object-cover" src={image} alt={title} />
+        <img className="h-48 w-full object-cover" src={image || 'https://via.placeholder.com/300'} alt={title} />
         <div className={`absolute top-2 right-2 px-2 py-1 rounded-md text-sm font-semibold ${getBadgeColor()}`}>
           {isFull ? 'Complet' : `${spotsLeft} place${spotsLeft > 1 ? 's' : ''} disponible${spotsLeft > 1 ? 's' : ''}`}
         </div>

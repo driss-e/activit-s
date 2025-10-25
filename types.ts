@@ -6,6 +6,7 @@ export interface User {
   avatar: string;
   role: 'member' | 'admin';
   status: 'active' | 'inactive';
+  createdAt: Date;
   phone?: string;
   gender?: 'male' | 'female' | 'prefer_not_to_say';
   hobbies?: string;
@@ -31,6 +32,7 @@ export interface Activity {
   description: string;
   image: string;
   date: Date;
+  createdAt: Date;
   location: string;
   organizer: {
     id: string;
@@ -48,7 +50,8 @@ export type View =
   | { type: 'CREATE_ACTIVITY' }
   | { type: 'PROFILE' }
   | { type: 'USER_PROFILE'; userId: string }
-  | { type: 'ADMIN'; section: 'dashboard' | 'users' | 'activities' };
+  | { type: 'ADMIN'; section: 'dashboard' | 'users' | 'activities' }
+  | { type: 'ADMIN_LOGIN' };
 
 export interface ProfileUpdateData {
     name: string;

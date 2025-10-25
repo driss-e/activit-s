@@ -12,6 +12,7 @@ interface DashboardProps {
   setFilterNext7Days: (value: boolean) => void;
   onLoadMore: () => void;
   hasMore: boolean;
+  loading: boolean;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -22,10 +23,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   filterNext7Days,
   setFilterNext7Days,
   onLoadMore,
-  hasMore
+  hasMore,
+  loading
 }) => {
   const observer = useRef<IntersectionObserver | null>(null);
   const lastActivityElementRef = useCallback((node: HTMLDivElement) => {
+    if (loading) return;
     if (observer.current) observer.current.disconnect();
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore) {
@@ -33,7 +36,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
       }
     });
     if (node) observer.current.observe(node);
-  }, [hasMore, onLoadMore]);
+  }, [hasMore, onLoadMore, loading]);
+
 
   return (
     <div className="bg-light min-h-screen dark:bg-slate-900">
@@ -60,7 +64,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         onChange={(e) => setFilterNext7Days(e.target.checked)}
                         className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:bg-slate-600 dark:border-slate-500"
                     />
-                    <label htmlFor="filter-7-days" className="text-sm text-gray-700 dark:text-slate-300">
+                    <label 
+                        htmlFor="filter-7-days" 
+                        className="text-sm text-gray-700 dark:text-slate-300">
                         Dans les 7 prochains jours
                     </label>
                 </div>
@@ -86,10 +92,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="text-center py-8">
                 <button 
                   onClick={onLoadMore}
-                  className="px-6 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-hover transition-colors"
+                  disabled={loading}
+                  className="px-6 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-hover transition-colors disabled:bg-slate-400 disabled:cursor-wait flex items-center justify-center mx-auto"
                 >
-                  Charger plus d'activités
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Chargement...
+                    </>
+                  ) : (
+                    "Charger plus d'activités"
+                  )}
                 </button>
+              </div>
+            )}
+             {!hasMore && activities.length > 0 && (
+              <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                <p>Vous avez atteint la fin de la liste.</p>
               </div>
             )}
           </>

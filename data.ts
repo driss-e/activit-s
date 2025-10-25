@@ -8,6 +8,7 @@ export const initialUsers: User[] = [
     avatar: 'https://i.pravatar.cc/150?u=alice@example.com',
     role: 'member',
     status: 'active',
+    createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), // 60 days ago
     hobbies: 'Hiking, Photography',
     instagram: 'alice_hikes',
   },
@@ -18,6 +19,7 @@ export const initialUsers: User[] = [
     avatar: 'https://i.pravatar.cc/150?u=bob@example.com',
     role: 'member',
     status: 'active',
+    createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000), // 45 days ago
     gender: 'male',
     hobbies: 'Cooking, Board Games',
     facebook: 'bob.cooks',
@@ -29,6 +31,7 @@ export const initialUsers: User[] = [
     avatar: 'https://i.pravatar.cc/150?u=charlie@example.com',
     role: 'member',
     status: 'inactive',
+    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
     phone: '555-1234',
   },
   {
@@ -38,6 +41,7 @@ export const initialUsers: User[] = [
     avatar: 'https://i.pravatar.cc/150?u=admin@example.com',
     role: 'admin',
     status: 'active',
+    createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000), // 90 days ago
     gender: 'prefer_not_to_say',
   },
 ];
@@ -61,6 +65,7 @@ export const initialActivities: Activity[] = [
     description: 'Une belle randonnée pour profiter de la nature et de la vue sur la ville. Apportez de l\'eau et de bonnes chaussures.',
     image: 'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=2070&auto=format&fit=crop',
     date: tomorrow,
+    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
     location: 'Parc du Mont-Royal, Montréal, QC',
     organizer: { id: 'user-1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?u=alice@example.com' },
     participants: ['user-1', 'user-2'],
@@ -81,6 +86,7 @@ export const initialActivities: Activity[] = [
     description: 'Rejoignez-nous pour une soirée de jeux de société. Apportez vos jeux préférés si vous le souhaitez !',
     image: 'https://images.unsplash.com/photo-1577897245043-d2d0b5168434?q=80&w=2070&auto=format&fit=crop',
     date: nextWeek,
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
     location: 'Le Colonel Moutarde, 4430 rue St-Denis, Montréal, QC',
     organizer: { id: 'user-2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?u=bob@example.com' },
     participants: ['user-2'],
@@ -93,6 +99,7 @@ export const initialActivities: Activity[] = [
     description: 'Explorons ensemble les nouvelles expositions du musée. Entrée gratuite ce jour-là.',
     image: 'https://images.unsplash.com/photo-1582563266993-871b88a8d234?q=80&w=2070&auto=format&fit=crop',
     date: tenDaysLater,
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
     location: '1380 Sherbrooke O, Montréal, QC H3G 1J5',
     organizer: { id: 'user-1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?u=alice@example.com' },
     participants: ['user-1', 'user-2', 'user-3'],

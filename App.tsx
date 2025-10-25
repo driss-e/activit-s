@@ -8,10 +8,26 @@ import { ProfilePage } from './components/ProfilePage';
 import { UserProfilePage } from './components/UserProfilePage';
 import { AdminPanel } from './components/AdminPanel';
 import { LandingPage } from './components/LandingPage';
+import { AdminLoginPage } from './components/AdminLoginPage';
 import type { User, Activity, View, Comment, ProfileUpdateData } from './types';
 import { initialActivities, initialUsers } from './data';
 
-// Helper to parse dates from localStorage
+// Helper to parse users with dates from localStorage
+const parseUsers = (data: string | null): User[] => {
+    if (!data) return initialUsers;
+    try {
+        const parsed = JSON.parse(data);
+        return parsed.map((user: any) => ({
+            ...user,
+            createdAt: new Date(user.createdAt),
+        }));
+    } catch (e) {
+        return initialUsers;
+    }
+};
+
+
+// Helper to parse activities with dates from localStorage
 const parseActivities = (data: string | null): Activity[] => {
     if (!data) return initialActivities;
     try {
@@ -19,6 +35,7 @@ const parseActivities = (data: string | null): Activity[] => {
         return parsed.map((act: any) => ({
             ...act,
             date: new Date(act.date),
+            createdAt: new Date(act.createdAt),
             comments: act.comments.map((c: any) => ({ ...c, createdAt: new Date(c.createdAt) }))
         }));
     } catch (e) {
@@ -28,11 +45,7 @@ const parseActivities = (data: string | null): Activity[] => {
 
 
 const App: React.FC = () => {
-    const [users, setUsers] = useState<User[]>(() => {
-        const saved = localStorage.getItem('users');
-        return saved ? JSON.parse(saved) : initialUsers;
-    });
-
+    const [users, setUsers] = useState<User[]>(() => parseUsers(localStorage.getItem('users')));
     const [activities, setActivities] = useState<Activity[]>(() => parseActivities(localStorage.getItem('activities')));
 
     const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -50,6 +63,7 @@ const App: React.FC = () => {
     const [displayedActivities, setDisplayedActivities] = useState<Activity[]>([]);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
+    const [loading, setLoading] = useState(false);
     const ACTIVITIES_PER_PAGE = 8;
 
 
@@ -69,15 +83,18 @@ const App: React.FC = () => {
             .filter(activity => 
                 activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 activity.description.toLowerCase().includes(searchQuery.toLowerCase())
-            )
-            .sort((a, b) => a.date.getTime() - b.date.getTime());
+            );
+        
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
 
         if (filterNext7Days) {
-            const now = new Date();
             const sevenDaysFromNow = new Date();
             sevenDaysFromNow.setDate(now.getDate() + 7);
             result = result.filter(activity => activity.date >= now && activity.date <= sevenDaysFromNow);
         }
+        
+        result.sort((a, b) => a.date.getTime() - b.date.getTime());
 
         return result;
     }, [activities, searchQuery, filterNext7Days]);
@@ -90,13 +107,18 @@ const App: React.FC = () => {
     }, [filteredActivities]);
 
     const handleLoadMore = useCallback(() => {
-        if (hasMore) {
-            const currentLength = displayedActivities.length;
-            const newActivities = filteredActivities.slice(currentLength, currentLength + ACTIVITIES_PER_PAGE);
-            setDisplayedActivities(prev => [...prev, ...newActivities]);
-            setHasMore(currentLength + newActivities.length < filteredActivities.length);
+        if (hasMore && !loading) {
+            setLoading(true);
+            // Simulate network delay to show loading state
+            setTimeout(() => {
+                const currentLength = displayedActivities.length;
+                const newActivities = filteredActivities.slice(currentLength, currentLength + ACTIVITIES_PER_PAGE);
+                setDisplayedActivities(prev => [...prev, ...newActivities]);
+                setHasMore(currentLength + newActivities.length < filteredActivities.length);
+                setLoading(false);
+            }, 500);
         }
-    }, [hasMore, displayedActivities, filteredActivities]);
+    }, [hasMore, loading, displayedActivities, filteredActivities]);
 
     const handleLogin = async (email: string, password?: string) => {
         const user = users.find(u => u.email === email);
@@ -133,6 +155,7 @@ const App: React.FC = () => {
             avatar: `https://i.pravatar.cc/150?u=${email}`,
             role: 'member',
             status: 'active',
+            createdAt: new Date(),
         };
         setUsers(prev => [...prev, newUser]);
         setCurrentUser(newUser);
@@ -160,12 +183,13 @@ const App: React.FC = () => {
         setActivities(acts => acts.map(act => act.id === activityId ? { ...act, comments: [...act.comments, newComment] } : act));
     };
 
-    const handleCreateActivity = (activityData: Omit<Activity, 'id' | 'participants' | 'comments'>) => {
+    const handleCreateActivity = (activityData: Omit<Activity, 'id' | 'participants' | 'comments' | 'createdAt'>) => {
         const newActivity: Activity = {
             ...activityData,
             id: `activity-${Date.now()}`,
             participants: [],
             comments: [],
+            createdAt: new Date(),
         };
         setActivities(prev => [newActivity, ...prev]);
         setView({ type: 'DASHBOARD' });
@@ -217,11 +241,23 @@ const App: React.FC = () => {
                 const user = users.find(u => u.id === view.userId);
                 const lastView: View = { type: 'DASHBOARD' }; // A simple back logic
                 return user ? <UserProfilePage user={user} onBack={() => setView(lastView)} /> : <div>Utilisateur non trouvé</div>;
+            case 'ADMIN_LOGIN':
+                return <AdminLoginPage onLogin={handleLogin} setView={setView} />;
             case 'ADMIN':
-                 return currentUser.role === 'admin' ? <AdminPanel users={users} activities={activities} onDeleteUser={handleDeleteUser} onDeleteActivity={handleDeleteActivity} onUpdateUserStatus={handleUpdateUserStatus} currentSection={view.section} setView={setView} currentUser={currentUser} /> : <div>Accès refusé</div>;
+                 return currentUser.role === 'admin' ? <AdminPanel users={users} activities={activities} onDeleteUser={handleDeleteUser} onDeleteActivity={handleDeleteActivity} onUpdateUserStatus={handleUpdateUserStatus} currentSection={view.section} setView={setView} currentUser={currentUser} /> : <AdminLoginPage onLogin={handleLogin} setView={setView} />;
             case 'DASHBOARD':
             default:
-                return <Dashboard activities={displayedActivities} setView={setView} searchQuery={searchQuery} setSearchQuery={setSearchQuery} filterNext7Days={filterNext7Days} setFilterNext7Days={setFilterNext7Days} onLoadMore={handleLoadMore} hasMore={hasMore} />;
+                return <Dashboard 
+                    activities={displayedActivities} 
+                    setView={setView} 
+                    searchQuery={searchQuery} 
+                    setSearchQuery={setSearchQuery} 
+                    filterNext7Days={filterNext7Days} 
+                    setFilterNext7Days={setFilterNext7Days} 
+                    onLoadMore={handleLoadMore} 
+                    hasMore={hasMore} 
+                    loading={loading} 
+                />;
         }
     };
 

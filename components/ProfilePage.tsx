@@ -79,7 +79,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateP
     const url = platform === 'instagram' ? `https://instagram.com/${value}` : `https://facebook.com/${value}`;
     const Icon = platform === 'instagram' ? InstagramIcon : FacebookIcon;
     return (
-        <a href={url} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-primary dark:text-slate-400 dark:hover:text-primary-hover">
+        <a href={url} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-[#625BFF] dark:text-slate-400 dark:hover:text-[#7d75ff]">
             <Icon className="h-6 w-6" />
         </a>
     );
@@ -87,7 +87,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateP
 
   return (
     <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
-      <button onClick={onBack} className="flex items-center gap-2 mb-6 text-primary hover:underline">
+      <button onClick={onBack} className="flex items-center gap-2 mb-6 text-[#625BFF] hover:underline">
         <ArrowLeftIcon />
         Retour
       </button>
@@ -105,7 +105,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateP
                     <img src={formData.avatar} alt={formData.name} className="h-40 w-40 rounded-full mx-auto shadow-md" />
                     {isEditing && (
                         <div className="mt-4">
-                            <label htmlFor="avatar-upload" className="cursor-pointer text-sm text-primary hover:underline">
+                            <label htmlFor="avatar-upload" className="cursor-pointer text-sm text-[#625BFF] hover:underline">
                                 Changer de photo
                             </label>
                             <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
@@ -133,15 +133,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateP
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-slate-300">Nom complet</label>
-                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50" />
+                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#625BFF] focus:border-[#625BFF] sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50" />
                     </div>
                      <div>
                         <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-slate-300">Téléphone</label>
-                        <input type="tel" name="phone" id="phone" value={formData.phone || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50" />
+                        <input type="tel" name="phone" id="phone" value={formData.phone || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#625BFF] focus:border-[#625BFF] sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50" />
                     </div>
                      <div>
                         <label htmlFor="gender" className="block text-sm font-medium text-gray-700 dark:text-slate-300">Genre</label>
-                        <select name="gender" id="gender" value={formData.gender} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50">
+                        <select name="gender" id="gender" value={formData.gender} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#625BFF] focus:border-[#625BFF] sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50">
                             <option value="prefer_not_to_say">Ne pas préciser</option>
                             <option value="male">Homme</option>
                             <option value="female">Femme</option>
@@ -149,15 +149,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateP
                     </div>
                     <div>
                         <label htmlFor="hobbies" className="block text-sm font-medium text-gray-700 dark:text-slate-300">Hobbies</label>
-                        <input type="text" name="hobbies" id="hobbies" value={formData.hobbies || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50" />
+                        <input type="text" name="hobbies" id="hobbies" value={formData.hobbies || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#625BFF] focus:border-[#625BFF] sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50" />
                     </div>
                      <div>
                         <label htmlFor="instagram" className="block text-sm font-medium text-gray-700 dark:text-slate-300">Instagram (pseudo)</label>
-                        <input type="text" name="instagram" id="instagram" value={formData.instagram || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50" />
+                        <input type="text" name="instagram" id="instagram" value={formData.instagram || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#625BFF] focus:border-[#625BFF] sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50" />
                     </div>
                      <div>
                         <label htmlFor="facebook" className="block text-sm font-medium text-gray-700 dark:text-slate-300">Facebook (ID de profil)</label>
-                        <input type="text" name="facebook" id="facebook" value={formData.facebook || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50" />
+                        <input type="text" name="facebook" id="facebook" value={formData.facebook || ''} onChange={handleChange} disabled={!isEditing} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#625BFF] focus:border-[#625BFF] sm:text-sm disabled:bg-gray-100 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:disabled:bg-slate-700/50" />
                     </div>
                 </div>
 
@@ -166,7 +166,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ currentUser, onUpdateP
                         <button type="button" onClick={handleCancel} className="px-6 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 dark:bg-slate-600 dark:text-slate-300 dark:border-slate-500 dark:hover:bg-slate-500">
                             Annuler
                         </button>
-                        <button type="submit" className="px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus">
+                        <button type="submit" className="px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#625BFF] hover:bg-[#7d75ff] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4639ff]">
                             Enregistrer
                         </button>
                     </div>
