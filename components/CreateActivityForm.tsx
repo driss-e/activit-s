@@ -4,7 +4,7 @@ import { ArrowLeftIcon } from './icons';
 
 interface CreateActivityFormProps {
   currentUser: User | null;
-  onCreateActivity: (activity: Omit<Activity, 'id' | 'participants' | 'comments' | 'createdAt'>) => void;
+  onCreateActivity: (activity: Omit<Activity, 'id' | 'participants' | 'comments' | 'createdAt' | 'status'>) => void;
   onCancel: () => void;
 }
 

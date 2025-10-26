@@ -78,6 +78,7 @@ export const initialActivities: Activity[] = [
     organizer: { id: 'user-1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?u=alice@example.com' },
     participants: ['user-1', 'user-2'],
     maxParticipants: 10,
+    status: 'approved',
     comments: [
       {
         id: 'comment-1',
@@ -99,6 +100,7 @@ export const initialActivities: Activity[] = [
     organizer: { id: 'user-1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?u=alice@example.com' },
     participants: ['user-1', 'user-2', 'admin-1'],
     maxParticipants: 4,
+    status: 'approved',
     comments: [],
   },
   {
@@ -112,6 +114,7 @@ export const initialActivities: Activity[] = [
     organizer: { id: 'user-2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?u=bob@example.com' },
     participants: ['user-2'],
     maxParticipants: 20,
+    status: 'approved',
     comments: [],
   },
   {
@@ -125,6 +128,7 @@ export const initialActivities: Activity[] = [
     organizer: { id: 'user-2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?u=bob@example.com' },
     participants: ['user-2'],
     maxParticipants: 8,
+    status: 'approved',
     comments: [],
   },
   {
@@ -138,6 +142,7 @@ export const initialActivities: Activity[] = [
     organizer: { id: 'user-2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?u=bob@example.com' },
     participants: ['user-2', 'user-1'],
     maxParticipants: 10,
+    status: 'approved',
     comments: [],
   },
   {
@@ -151,6 +156,7 @@ export const initialActivities: Activity[] = [
     organizer: { id: 'user-1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?u=alice@example.com' },
     participants: ['user-1', 'user-2', 'user-3'],
     maxParticipants: 15,
+    status: 'approved',
     comments: [
       {
         id: 'comment-2',
@@ -179,6 +185,7 @@ export const initialActivities: Activity[] = [
     organizer: { id: 'user-1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?u=alice@example.com' },
     participants: ['user-1', 'admin-1'],
     maxParticipants: 6,
+    status: 'approved',
     comments: [],
   },
   {
@@ -192,6 +199,7 @@ export const initialActivities: Activity[] = [
     organizer: { id: 'user-2', name: 'Bob', avatar: 'https://i.pravatar.cc/150?u=bob@example.com' },
     participants: ['user-2', 'user-1'],
     maxParticipants: 12,
+    status: 'approved',
     comments: [],
   },
   {
@@ -205,6 +213,7 @@ export const initialActivities: Activity[] = [
     organizer: { id: 'user-1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?u=alice@example.com' },
     participants: ['user-1', 'user-2'],
     maxParticipants: 50,
+    status: 'approved',
     comments: [],
   },
   {
@@ -218,6 +227,7 @@ export const initialActivities: Activity[] = [
     organizer: { id: 'user-1', name: 'Alice', avatar: 'https://i.pravatar.cc/150?u=alice@example.com' },
     participants: ['user-1', 'user-2'],
     maxParticipants: 10,
+    status: 'approved',
     comments: [
       {
         id: 'comment-4',

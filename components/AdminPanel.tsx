@@ -1,7 +1,7 @@
 // FIX: Provide full content for the AdminPanel component.
 import React, { useState } from 'react';
 import type { User, Activity, View } from '../types';
-import { UsersGroupIcon, ClipboardListIcon, CalendarIcon } from './icons';
+import { UsersGroupIcon, ClipboardListIcon, CalendarIcon, SearchIcon, XIcon } from './icons';
 import { BarChart, LineChart } from './charts';
 
 interface AdminPanelProps {
@@ -9,6 +9,7 @@ interface AdminPanelProps {
   activities: Activity[];
   onDeleteUser: (userId: string) => void;
   onDeleteActivity: (activityId: string) => void;
+  onApproveActivity: (activityId: string) => void;
   onUpdateUserStatus: (userId: string, status: 'active' | 'inactive') => void;
   currentSection: 'dashboard' | 'users' | 'activities';
   setView: (view: View) => void;
@@ -65,14 +66,14 @@ const groupDataByMonth = (items: (User | Activity)[]) => {
 };
 
 
-export const AdminPanel: React.FC<AdminPanelProps> = ({ users, activities, onDeleteUser, onDeleteActivity, onUpdateUserStatus, currentSection, setView, currentUser }) => {
+export const AdminPanel: React.FC<AdminPanelProps> = ({ users, activities, onDeleteUser, onDeleteActivity, onApproveActivity, onUpdateUserStatus, currentSection, setView, currentUser }) => {
 
     const renderContent = () => {
         switch (currentSection) {
             case 'users':
-                return <UserManagement users={users} onDeleteUser={onDeleteUser} onUpdateUserStatus={onUpdateUserStatus} currentUser={currentUser} />;
+                return <UserActivityManagement users={users} activities={activities} onDeleteActivity={onDeleteActivity} setView={setView} />;
             case 'activities':
-                return <ActivityManagement activities={activities} onDeleteActivity={onDeleteActivity} />;
+                return <ActivityManagement activities={activities} onDeleteActivity={onDeleteActivity} onApproveActivity={onApproveActivity} />;
             case 'dashboard':
             default:
                 const activeUsers = users.filter(u => u.status === 'active').length;
@@ -151,110 +152,162 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ users, activities, onDel
 };
 
 
-const UserManagement: React.FC<{ users: User[], onDeleteUser: (userId: string) => void, onUpdateUserStatus: (userId: string, status: 'active' | 'inactive') => void, currentUser: User }> = ({ users, onDeleteUser, onUpdateUserStatus, currentUser }) => {
-    const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+interface UserActivityManagementProps {
+    users: User[];
+    activities: Activity[];
+    onDeleteActivity: (activityId: string) => void;
+    setView: (view: View) => void;
+}
 
-    const filteredUsers = users.filter(user => {
-        if (userStatusFilter === 'all') return true;
-        return user.status === userStatusFilter;
-    });
-    
-    const FilterButton: React.FC<{
-        filter: 'all' | 'active' | 'inactive';
-        label: string;
-    }> = ({ filter, label }) => {
-        const isActive = userStatusFilter === filter;
-        return (
-            <button
-                onClick={() => setUserStatusFilter(filter)}
-                className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-colors ${
-                  isActive
-                    ? 'bg-primary text-white shadow'
-                    : 'text-stone-600 hover:bg-white/60 dark:text-stone-300 dark:hover:bg-stone-600/80'
-                }`}
-            >
-                {label}
-            </button>
-        );
-    };
+const UserActivityManagement: React.FC<UserActivityManagementProps> = ({ users, activities, onDeleteActivity, setView }) => {
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+
+    const selectedUserActivities = selectedUserId ? activities.filter(act => act.organizer.id === selectedUserId) : [];
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-md dark:bg-stone-800">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-                <h3 className="text-xl font-semibold dark:text-stone-200">Gérer les Utilisateurs ({filteredUsers.length})</h3>
-                <div className="flex space-x-1 rounded-lg bg-stone-100 p-1 dark:bg-stone-900/50">
-                    <FilterButton filter="all" label="Tous" />
-                    <FilterButton filter="active" label="Actif" />
-                    <FilterButton filter="inactive" label="Inactif" />
-                </div>
-            </div>
-            <div className="max-h-96 overflow-y-auto">
-            <ul className="divide-y divide-stone-200 dark:divide-stone-700">
-                {filteredUsers.map(user => (
-                <li key={user.id} className="py-3 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <img className="h-10 w-10 rounded-full flex-shrink-0" src={user.avatar} alt={user.name} />
-                        <div className="min-w-0">
-                            <p className="text-sm font-medium text-stone-900 dark:text-stone-200 truncate">{user.name}</p>
-                            <p className="text-sm text-stone-500 dark:text-stone-400 truncate">{user.email}</p>
-                        </div>
-                    </div>
+        <div dir="rtl">
+            <h2 className="text-3xl font-bold font-heading text-right mb-2 text-stone-800 dark:text-stone-100">
+                لوحة دارة - إدارة انشطة المستخدمين
+            </h2>
+            <p className="text-stone-600 dark:text-stone-400 text-right mb-8">
+                تصفح جميع المستخدمين وأنشطتهم بسهولة، واعتمد أن نشاط بضغطة واحدة
+            </p>
 
-                    <div className="hidden md:block">
-                        <p className="text-sm text-stone-500 dark:text-stone-400">
-                            {user.createdAt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </p>
+            <div className="bg-white dark:bg-stone-800 rounded-xl shadow-md overflow-x-auto">
+                <table className="w-full text-right">
+                    <thead className="bg-stone-50 dark:bg-stone-700/50">
+                        <tr>
+                            <th className="p-4 text-sm font-semibold text-stone-600 dark:text-stone-300">#</th>
+                            <th className="p-4 text-sm font-semibold text-stone-600 dark:text-stone-300">المستخدم</th>
+                            <th className="p-4 text-sm font-semibold text-stone-600 dark:text-stone-300">البريد الالكتروني</th>
+                            <th className="p-4 text-sm font-semibold text-stone-600 dark:text-stone-300">عدد النشطة</th>
+                            <th className="p-4 text-sm font-semibold text-stone-600 dark:text-stone-300">جراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-200 dark:divide-stone-700">
+                        {users.map((user, index) => (
+                            <tr key={user.id}>
+                                <td className="p-4 text-stone-500 dark:text-stone-400">{index + 1}</td>
+                                <td className="p-4 font-medium text-stone-800 dark:text-stone-200">{user.name}</td>
+                                <td className="p-4 text-stone-600 dark:text-stone-300">{user.email}</td>
+                                <td className="p-4 text-stone-600 dark:text-stone-300">
+                                    {activities.filter(act => act.organizer.id === user.id).length}
+                                </td>
+                                <td className="p-4">
+                                    <button
+                                        onClick={() => setSelectedUserId(prevId => prevId === user.id ? null : user.id)}
+                                        className="px-3 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-hover flex items-center gap-2"
+                                    >
+                                        <SearchIcon className="w-4 h-4" />
+                                        عرض الأنشطة
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {selectedUserId && (
+                <div className="mt-10">
+                    <h3 className="text-2xl font-bold text-right mb-4 text-stone-800 dark:text-stone-100">
+                        أنشطة المستخدم
+                    </h3>
+                    <div className="bg-white dark:bg-stone-800 rounded-xl shadow-md overflow-x-auto">
+                         <table className="w-full text-right">
+                            <thead className="bg-stone-50 dark:bg-stone-700/50">
+                                <tr>
+                                    <th className="p-4 text-sm font-semibold text-stone-600 dark:text-stone-300">#</th>
+                                    <th className="p-4 text-sm font-semibold text-stone-600 dark:text-stone-300">اسم النشاط</th>
+                                    <th className="p-4 text-sm font-semibold text-stone-600 dark:text-stone-300">التاريخ</th>
+                                    <th className="p-4 text-sm font-semibold text-stone-600 dark:text-stone-300">وصف قصير</th>
+                                    <th className="p-4 text-sm font-semibold text-stone-600 dark:text-stone-300">جراءات</th>
+                                </tr>
+                            </thead>
+                             <tbody className="divide-y divide-stone-200 dark:divide-stone-700">
+                                {selectedUserActivities.length > 0 ? selectedUserActivities.map((activity, index) => (
+                                    <tr key={activity.id}>
+                                        <td className="p-4 text-stone-500 dark:text-stone-400">{index + 1}</td>
+                                        <td className="p-4 font-medium text-stone-800 dark:text-stone-200">{activity.title}</td>
+                                        <td className="p-4 text-stone-600 dark:text-stone-300">{activity.date.toLocaleDateString()}</td>
+                                        <td className="p-4 text-stone-600 dark:text-stone-300 max-w-xs truncate" title={activity.description}>
+                                            {activity.description}
+                                        </td>
+                                        <td className="p-4">
+                                            <button
+                                                onClick={() => window.confirm(`حذف النشاط "${activity.title}"؟`) && onDeleteActivity(activity.id)}
+                                                className="px-3 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 flex items-center gap-2"
+                                            >
+                                                <XIcon className="w-4 h-4" />
+                                                حذف النشاط
+                                            </button>
+                                        </td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan={5} className="text-center p-6 text-stone-500 dark:text-stone-400">
+                                            لم ينظم هذا المستخدم أي أنشطة.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                         </table>
                     </div>
-                    
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'}`}>
-                            {user.status === 'active' ? 'Actif' : 'Inactif'}
-                        </span>
-                        {user.id !== currentUser.id && (
-                            <>
-                                <button
-                                    onClick={() => onUpdateUserStatus(user.id, user.status === 'active' ? 'inactive' : 'active')}
-                                    className="text-sm font-medium text-primary hover:text-primary-hover"
-                                >
-                                    {user.status === 'active' ? 'Désactiver' : 'Activer'}
-                                </button>
-                                <button
-                                    onClick={() => window.confirm(`Supprimer l'utilisateur ${user.name} ?`) && onDeleteUser(user.id)}
-                                    className="text-sm font-medium text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-400"
-                                >
-                                    Supprimer
-                                </button>
-                            </>
-                        )}
-                    </div>
-                </li>
-                ))}
-            </ul>
+                </div>
+            )}
+            
+            <div className="mt-8 text-center">
+                 <button 
+                    onClick={() => setView({ type: 'CREATE_ACTIVITY' })}
+                    className="px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary-hover"
+                >
+                    إضافة نشاط جديد للمستخدم
+                </button>
             </div>
         </div>
     );
 };
 
-const ActivityManagement: React.FC<{ activities: Activity[], onDeleteActivity: (activityId: string) => void }> = ({ activities, onDeleteActivity }) => (
+
+const ActivityManagement: React.FC<{ activities: Activity[], onDeleteActivity: (activityId: string) => void, onApproveActivity: (activityId: string) => void }> = ({ activities, onDeleteActivity, onApproveActivity }) => (
      <div className="bg-white p-6 rounded-lg shadow-md dark:bg-stone-800">
         <h3 className="text-xl font-semibold mb-4 dark:text-stone-200">Gérer les Activités ({activities.length})</h3>
         <div className="max-h-96 overflow-y-auto">
         <ul className="divide-y divide-stone-200 dark:divide-stone-700">
             {activities.map(activity => (
-            <li key={activity.id} className="py-3 flex items-center justify-between gap-2">
+            <li key={activity.id} className="py-3 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">
-                <img className="h-10 w-10 rounded-md object-cover flex-shrink-0" src={activity.image} alt={activity.title} />
-                <div className="min-w-0">
-                    <p className="text-sm font-medium text-stone-900 dark:text-stone-200 truncate">{activity.title}</p>
-                    <p className="text-sm text-stone-500 dark:text-stone-400 truncate">{activity.location}</p>
+                    <img className="h-10 w-10 rounded-md object-cover flex-shrink-0" src={activity.image} alt={activity.title} />
+                    <div className="min-w-0">
+                        <p className="text-sm font-medium text-stone-900 dark:text-stone-200 truncate">{activity.title}</p>
+                        <p className="text-sm text-stone-500 dark:text-stone-400 truncate">{activity.location}</p>
+                    </div>
                 </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        activity.status === 'approved' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' 
+                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300'
+                    }`}>
+                        {activity.status === 'approved' ? 'Approuvée' : 'En attente'}
+                    </span>
+
+                    {activity.status === 'pending' && (
+                        <button
+                            onClick={() => onApproveActivity(activity.id)}
+                            className="text-sm font-medium text-primary hover:text-primary-hover"
+                        >
+                            Approuver
+                        </button>
+                    )}
+
+                    <button
+                        onClick={() => window.confirm(`Supprimer l'activité "${activity.title}" ?`) && onDeleteActivity(activity.id)}
+                        className="text-sm font-medium text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-400"
+                    >
+                        Supprimer
+                    </button>
                 </div>
-                <button
-                onClick={() => window.confirm(`Supprimer l'activité "${activity.title}" ?`) && onDeleteActivity(activity.id)}
-                className="text-sm font-medium text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-400 flex-shrink-0"
-                >
-                Supprimer
-                </button>
             </li>
             ))}
         </ul>

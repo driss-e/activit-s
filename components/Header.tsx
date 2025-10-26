@@ -49,13 +49,23 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, setView, onLogout }
                         <button onClick={() => setView({ type: 'PROFILE' })} className="block w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-700">
                             Mon Profil
                         </button>
-                        {currentUser.role === 'admin' && (
+                        {currentUser.role === 'admin' ? (
                           <button 
                             onClick={() => setView({ type: 'ADMIN', section: 'dashboard' })} 
                             className="block w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-700"
                           >
                             Administration
                           </button>
+                        ) : (
+                           <button
+                            onClick={() => {
+                                onLogout();
+                                setView({ type: 'ADMIN_LOGIN' });
+                            }}
+                            className="block w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-700"
+                           >
+                             Portail Admin
+                           </button>
                         )}
                         <button onClick={onLogout} className="block w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-stone-100 dark:text-stone-200 dark:hover:bg-stone-700">
                             Déconnexion

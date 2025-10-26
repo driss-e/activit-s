@@ -79,11 +79,17 @@ const App: React.FC = () => {
     }, [currentUser]);
 
     const filteredActivities = useMemo(() => {
-        let result = activities
-            .filter(activity => 
-                activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                activity.description.toLowerCase().includes(searchQuery.toLowerCase())
-            );
+        let result = activities;
+        
+        // Admins see all activities, regular users only see approved ones
+        if (currentUser?.role !== 'admin') {
+            result = result.filter(activity => activity.status === 'approved');
+        }
+
+        result = result.filter(activity => 
+            activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            activity.description.toLowerCase().includes(searchQuery.toLowerCase())
+        );
         
         const now = new Date();
         now.setHours(0, 0, 0, 0);
@@ -97,7 +103,7 @@ const App: React.FC = () => {
         result.sort((a, b) => a.date.getTime() - b.date.getTime());
 
         return result;
-    }, [activities, searchQuery, filterNext7Days]);
+    }, [activities, searchQuery, filterNext7Days, currentUser]);
     
     useEffect(() => {
         setPage(1); // Reset page on filter change
@@ -183,15 +189,17 @@ const App: React.FC = () => {
         setActivities(acts => acts.map(act => act.id === activityId ? { ...act, comments: [...act.comments, newComment] } : act));
     };
 
-    const handleCreateActivity = (activityData: Omit<Activity, 'id' | 'participants' | 'comments' | 'createdAt'>) => {
+    const handleCreateActivity = (activityData: Omit<Activity, 'id' | 'participants' | 'comments' | 'createdAt' | 'status'>) => {
         const newActivity: Activity = {
             ...activityData,
             id: `activity-${Date.now()}`,
             participants: [],
             comments: [],
             createdAt: new Date(),
+            status: 'pending',
         };
         setActivities(prev => [newActivity, ...prev]);
+        alert("Votre activité a été soumise pour approbation. Elle sera visible une fois validée par un administrateur.");
         setView({ type: 'DASHBOARD' });
     };
 
@@ -219,16 +227,39 @@ const App: React.FC = () => {
         setActivities(prev => prev.filter(a => a.id !== activityId));
     };
 
+    const handleApproveActivity = (activityId: string) => {
+        setActivities(prev => prev.map(act => act.id === activityId ? { ...act, status: 'approved' } : act));
+    };
+
     const handleUpdateUserStatus = (userId: string, status: 'active' | 'inactive') => {
         setUsers(prevUsers => prevUsers.map(user => user.id === userId ? { ...user, status } : user));
     };
 
 
     if (!currentUser) {
+         if (view.type === 'ADMIN_LOGIN' || (view.type === 'ADMIN' && currentUser?.role !== 'admin')) {
+            return <AdminLoginPage onLogin={handleLogin} setView={setView} />;
+        }
         return <LandingPage onLogin={handleLogin} onRegister={handleRegister} onForgotPasswordRequest={async () => "token"} onResetPassword={async () => {}} />;
     }
 
     const renderView = () => {
+        // Guard: If a logged-in user is not an admin, redirect them to the dashboard
+        // if they try to access any admin-related pages.
+        if (currentUser.role !== 'admin' && (view.type === 'ADMIN' || view.type === 'ADMIN_LOGIN')) {
+            return <Dashboard 
+                activities={displayedActivities} 
+                setView={setView} 
+                searchQuery={searchQuery} 
+                setSearchQuery={setSearchQuery} 
+                filterNext7Days={filterNext7Days} 
+                setFilterNext7Days={setFilterNext7Days} 
+                onLoadMore={handleLoadMore} 
+                hasMore={hasMore} 
+                loading={loading} 
+            />;
+        }
+    
         switch (view.type) {
             case 'ACTIVITY_DETAIL':
                 const activity = activities.find(a => a.id === view.activityId);
@@ -242,9 +273,12 @@ const App: React.FC = () => {
                 const lastView: View = { type: 'DASHBOARD' }; // A simple back logic
                 return user ? <UserProfilePage user={user} onBack={() => setView(lastView)} /> : <div>Utilisateur non trouvé</div>;
             case 'ADMIN_LOGIN':
-                return <AdminLoginPage onLogin={handleLogin} setView={setView} />;
+                // If we reach here, the user MUST be an admin (due to the guard above).
+                // An admin seeing a login page should be redirected to their panel.
+                return <AdminPanel users={users} activities={activities} onDeleteUser={handleDeleteUser} onDeleteActivity={handleDeleteActivity} onApproveActivity={handleApproveActivity} onUpdateUserStatus={handleUpdateUserStatus} currentSection={'dashboard'} setView={setView} currentUser={currentUser} />;
             case 'ADMIN':
-                 return currentUser.role === 'admin' ? <AdminPanel users={users} activities={activities} onDeleteUser={handleDeleteUser} onDeleteActivity={handleDeleteActivity} onUpdateUserStatus={handleUpdateUserStatus} currentSection={view.section} setView={setView} currentUser={currentUser} /> : <AdminLoginPage onLogin={handleLogin} setView={setView} />;
+                 // The guard already ensures only admins can reach this.
+                 return <AdminPanel users={users} activities={activities} onDeleteUser={handleDeleteUser} onDeleteActivity={handleDeleteActivity} onApproveActivity={handleApproveActivity} onUpdateUserStatus={handleUpdateUserStatus} currentSection={view.section} setView={setView} currentUser={currentUser} />;
             case 'DASHBOARD':
             default:
                 return <Dashboard 

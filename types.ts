@@ -42,6 +42,7 @@ export interface Activity {
   participants: string[]; // array of user IDs
   maxParticipants: number;
   comments: Comment[];
+  status: 'pending' | 'approved';
 }
 
 export type View =
