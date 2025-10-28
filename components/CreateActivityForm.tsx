@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import type { Activity, User } from '../types';
-import { ArrowLeftIcon } from './icons';
+import type { Activity, User, Category } from '../types';
+import { ArrowLeftIcon, XIcon } from './icons';
 
 interface CreateActivityFormProps {
   currentUser: User | null;
@@ -15,23 +15,38 @@ export const CreateActivityForm: React.FC<CreateActivityFormProps> = ({ currentU
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [maxParticipants, setMaxParticipants] = useState(10);
-  const [image, setImage] = useState('');
+  const [images, setImages] = useState<string[]>([]);
+  const [category, setCategory] = useState<Category>('Outdoors');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        if (file.size > 2 * 1024 * 1024) { // 2MB limit
-            alert("Le fichier est trop volumineux. Veuillez choisir une image de moins de 2 Mo.");
+      const files = e.target.files;
+      if (files) {
+        const filesArray = Array.from(files);
+        const imagePromises: Promise<string>[] = [];
+
+        if (filesArray.length + images.length > 5) {
+            alert("Vous ne pouvez télécharger que 5 images au maximum.");
             return;
         }
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setImage(reader.result as string);
-        };
-        reader.onerror = () => {
-            alert("Erreur lors de la lecture du fichier.");
-        }
-        reader.readAsDataURL(file);
+
+        filesArray.forEach(file => {
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                alert(`Le fichier ${file.name} est trop volumineux (max 2 Mo).`);
+                return;
+            }
+            const reader = new FileReader();
+            imagePromises.push(new Promise((resolve, reject) => {
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            }));
+        });
+
+        Promise.all(imagePromises)
+            .then(newImages => {
+                setImages(prev => [...prev, ...newImages]);
+            })
+            .catch(() => alert("Erreur lors de la lecture des fichiers."));
       }
   };
 
@@ -41,8 +56,8 @@ export const CreateActivityForm: React.FC<CreateActivityFormProps> = ({ currentU
       alert("Vous devez être connecté pour créer une activité.");
       return;
     }
-    if (!image) {
-        alert("Veuillez télécharger une image pour l'activité.");
+    if (images.length === 0) {
+        alert("Veuillez télécharger au moins une image pour l'activité.");
         return;
     }
 
@@ -53,8 +68,9 @@ export const CreateActivityForm: React.FC<CreateActivityFormProps> = ({ currentU
       description,
       location,
       date: activityDate,
-      image,
+      images,
       maxParticipants,
+      category,
       organizer: { id: currentUser.id, name: currentUser.name, avatar: currentUser.avatar },
     });
   };
@@ -94,11 +110,11 @@ export const CreateActivityForm: React.FC<CreateActivityFormProps> = ({ currentU
         </div>
         
         <div>
-            <label className={formLabelClasses + " mb-1"}>Image d'illustration</label>
+            <label className={formLabelClasses + " mb-1"}>Images de l'activité (la première sera la principale)</label>
             <div className="border border-dashed border-stone-300 rounded-lg p-4 bg-stone-50 dark:border-stone-600 dark:bg-stone-700/50">
                 <div className="w-full h-48 mb-4 bg-stone-200 rounded-md flex items-center justify-center overflow-hidden dark:bg-stone-700">
-                    {image ? (
-                        <img src={image} alt="Aperçu de l'activité" className="w-full h-full object-cover" />
+                    {images.length > 0 ? (
+                        <img src={images[0]} alt="Aperçu principal de l'activité" className="w-full h-full object-cover" />
                     ) : (
                         <div className="text-stone-400 text-center dark:text-stone-500">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -106,21 +122,50 @@ export const CreateActivityForm: React.FC<CreateActivityFormProps> = ({ currentU
                         </div>
                     )}
                 </div>
+                 {images.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {images.map((imgSrc, index) => (
+                            <div key={index} className="relative w-20 h-20 rounded-md overflow-hidden border-2 border-stone-300">
+                                <img src={imgSrc} alt={`Aperçu ${index + 1}`} className="w-full h-full object-cover" />
+                                <button 
+                                    type="button" 
+                                    onClick={() => setImages(prev => prev.filter((_, i) => i !== index))}
+                                    className="absolute top-0 right-0 bg-red-600 text-white rounded-full p-0.5 m-1 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-white"
+                                    aria-label={`Supprimer l'image ${index + 1}`}
+                                >
+                                   <XIcon className="h-4 w-4" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
                  <div>
                     <label htmlFor="image-upload" className="w-full cursor-pointer inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-secondary hover:bg-slate-700 dark:hover:bg-slate-600">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                        Choisir un fichier...
+                        {images.length > 0 ? "Ajouter d'autres images..." : "Choisir des fichiers..."}
                     </label>
-                    <input id="image-upload" type="file" accept="image/png, image/jpeg, image/webp" className="hidden" onChange={handleFileChange} />
-                    <p className="text-xs text-stone-500 mt-2 dark:text-stone-400">PNG, JPG, WEBP. Max 2Mo.</p>
+                    <input id="image-upload" type="file" multiple accept="image/png, image/jpeg, image/webp" className="hidden" onChange={handleFileChange} />
+                    <p className="text-xs text-stone-500 mt-2 dark:text-stone-400">PNG, JPG, WEBP. Max 2Mo. Jusqu'à 5 images.</p>
                  </div>
             </div>
         </div>
-
-        <div>
-          <label htmlFor="location" className={formLabelClasses}>Lieu</label>
-          <input type="text" id="location" value={location} onChange={(e) => setLocation(e.target.value)} required className={formInputClasses} />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="location" className={formLabelClasses}>Lieu</label>
+              <input type="text" id="location" value={location} onChange={(e) => setLocation(e.target.value)} required className={formInputClasses} />
+            </div>
+            <div>
+                <label htmlFor="category" className={formLabelClasses}>Catégorie</label>
+                <select id="category" value={category} onChange={(e) => setCategory(e.target.value as Category)} required className={formInputClasses}>
+                    <option value="Outdoors">Plein air</option>
+                    <option value="Sports">Sports</option>
+                    <option value="Culture">Culture</option>
+                    <option value="Social">Social</option>
+                </select>
+            </div>
         </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="date" className={formLabelClasses}>Date</label>

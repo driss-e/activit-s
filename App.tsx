@@ -9,8 +9,11 @@ import { UserProfilePage } from './components/UserProfilePage';
 import { AdminPanel } from './components/AdminPanel';
 import { LandingPage } from './components/LandingPage';
 import { AdminLoginPage } from './components/AdminLoginPage';
-import type { User, Activity, View, Comment, ProfileUpdateData } from './types';
+import { AuthPage } from './components/AuthPage';
+import type { User, Activity, View, Comment, ProfileUpdateData, Category, AuditLogEntry } from './types';
 import { initialActivities, initialUsers } from './data';
+
+const ITEMS_PER_PAGE = 12;
 
 // Helper to parse users with dates from localStorage
 const parseUsers = (data: string | null): User[] => {
@@ -36,40 +39,57 @@ const parseActivities = (data: string | null): Activity[] => {
             ...act,
             date: new Date(act.date),
             createdAt: new Date(act.createdAt),
-            comments: act.comments.map((c: any) => ({ ...c, createdAt: new Date(c.createdAt) }))
+            comments: act.comments.map((c: any) => ({ ...c, createdAt: new Date(c.createdAt) })),
         }));
     } catch (e) {
         return initialActivities;
     }
 };
 
+const parseAuditLogs = (data: string | null): AuditLogEntry[] => {
+    if (!data) return [];
+    try {
+        const parsed = JSON.parse(data);
+        return parsed.map((log: any) => ({
+            ...log,
+            timestamp: new Date(log.timestamp),
+        }));
+    } catch(e) {
+        return [];
+    }
+};
 
 const App: React.FC = () => {
     const [users, setUsers] = useState<User[]>(() => parseUsers(localStorage.getItem('users')));
     const [activities, setActivities] = useState<Activity[]>(() => parseActivities(localStorage.getItem('activities')));
-
+    const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(() => parseAuditLogs(localStorage.getItem('auditLogs')));
     const [currentUser, setCurrentUser] = useState<User | null>(() => {
-        const saved = localStorage.getItem('currentUser');
-        return saved ? JSON.parse(saved) : null;
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+            const user = JSON.parse(storedUser);
+            // find the full user object from the users list to ensure data is fresh
+            return users.find(u => u.id === user.id) || null;
+        }
+        return null;
     });
-
-    const [view, setView] = useState<View>({ type: 'DASHBOARD' });
-
-    // Search and filter state
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filterNext7Days, setFilterNext7Days] = useState(false);
     
-    // Infinite scroll state
-    const [displayedActivities, setDisplayedActivities] = useState<Activity[]>([]);
-    const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
-    const [loading, setLoading] = useState(false);
-    const ACTIVITIES_PER_PAGE = 8;
+    const [view, setView] = useState<View>({ type: 'LANDING' });
 
+    // Filter states
+    const [searchQuery, setSearchQuery] = useState('');
+    const [locationFilter, setLocationFilter] = useState('');
+    const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'this_week' | 'this_month'>('all');
+    const [categoryFilter, setCategoryFilter] = useState<Category | 'all'>('all');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'pending'>('all');
+
+    // Pagination state
+    const [displayedActivitiesCount, setDisplayedActivitiesCount] = useState(ITEMS_PER_PAGE);
+    const [loading, setLoading] = useState(false);
 
     // Persist state to localStorage
     useEffect(() => { localStorage.setItem('users', JSON.stringify(users)); }, [users]);
     useEffect(() => { localStorage.setItem('activities', JSON.stringify(activities)); }, [activities]);
+    useEffect(() => { localStorage.setItem('auditLogs', JSON.stringify(auditLogs)); }, [auditLogs]);
     useEffect(() => {
         if (currentUser) {
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
@@ -78,81 +98,139 @@ const App: React.FC = () => {
         }
     }, [currentUser]);
 
-    const filteredActivities = useMemo(() => {
-        let result = activities;
-        
-        // Admins see all activities, regular users only see approved ones
-        if (currentUser?.role !== 'admin') {
-            result = result.filter(activity => activity.status === 'approved');
-        }
-
-        result = result.filter(activity => 
-            activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            activity.description.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-
-        if (filterNext7Days) {
-            const sevenDaysFromNow = new Date();
-            sevenDaysFromNow.setDate(now.getDate() + 7);
-            result = result.filter(activity => activity.date >= now && activity.date <= sevenDaysFromNow);
-        }
-        
-        result.sort((a, b) => a.date.getTime() - b.date.getTime());
-
-        return result;
-    }, [activities, searchQuery, filterNext7Days, currentUser]);
-    
+     // Reset filters and scroll when view changes
     useEffect(() => {
-        setPage(1); // Reset page on filter change
-        const newDisplayed = filteredActivities.slice(0, ACTIVITIES_PER_PAGE);
-        setDisplayedActivities(newDisplayed);
-        setHasMore(filteredActivities.length > ACTIVITIES_PER_PAGE);
-    }, [filteredActivities]);
+        if (view.type === 'DASHBOARD') {
+            setSearchQuery('');
+            setLocationFilter('');
+            setDateFilter('all');
+            setCategoryFilter('all');
+            setStatusFilter(currentUser?.role === 'admin' ? 'all' : 'approved');
+            setDisplayedActivitiesCount(ITEMS_PER_PAGE);
+            window.scrollTo(0, 0);
+        }
+    }, [view, currentUser]);
+
+    const activeUserIds = useMemo(() => 
+        new Set(users.filter(u => u.status !== 'deleted').map(u => u.id)), 
+        [users]
+    );
+
+    const filteredActivities = useMemo(() => {
+        let result = [...activities];
+
+        // Filter out activities from deleted users
+        result = result.filter(a => activeUserIds.has(a.organizer.id));
+
+        // Status filter (non-admins should only see approved activities)
+        if (currentUser?.role !== 'admin') {
+            result = result.filter(a => a.status === 'approved');
+        } else {
+            if (statusFilter !== 'all') {
+                result = result.filter(a => a.status === statusFilter);
+            }
+        }
+        
+        // Search query filter
+        if (searchQuery) {
+            const lowerCaseQuery = searchQuery.toLowerCase();
+            result = result.filter(a =>
+                a.title.toLowerCase().includes(lowerCaseQuery) ||
+                a.description.toLowerCase().includes(lowerCaseQuery)
+            );
+        }
+
+        // Location filter
+        if (locationFilter) {
+            result = result.filter(a => a.location.toLowerCase().includes(locationFilter.toLowerCase()));
+        }
+
+        // Date filter
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        if (dateFilter === 'today') {
+            const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+            result = result.filter(a => a.date >= startOfToday && a.date <= endOfToday);
+        } else if (dateFilter === 'this_week') {
+            const endOfWeek = new Date(startOfToday);
+            endOfWeek.setDate(startOfToday.getDate() + (7 - now.getDay()));
+            endOfWeek.setHours(23, 59, 59);
+            result = result.filter(a => a.date >= startOfToday && a.date <= endOfWeek);
+        } else if (dateFilter === 'this_month') {
+            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+            result = result.filter(a => a.date >= startOfToday && a.date <= endOfMonth);
+        }
+        
+        // Category filter
+        if (categoryFilter !== 'all') {
+            result = result.filter(a => a.category === categoryFilter);
+        }
+        
+        // Sort by date (upcoming first)
+        return result.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    }, [activities, currentUser, searchQuery, locationFilter, dateFilter, categoryFilter, statusFilter, activeUserIds]);
+
+    const paginatedActivities = useMemo(() => filteredActivities.slice(0, displayedActivitiesCount), [filteredActivities, displayedActivitiesCount]);
+    const hasMoreActivities = useMemo(() => displayedActivitiesCount < filteredActivities.length, [displayedActivitiesCount, filteredActivities.length]);
 
     const handleLoadMore = useCallback(() => {
-        if (hasMore && !loading) {
-            setLoading(true);
-            // Simulate network delay to show loading state
-            setTimeout(() => {
-                const currentLength = displayedActivities.length;
-                const newActivities = filteredActivities.slice(currentLength, currentLength + ACTIVITIES_PER_PAGE);
-                setDisplayedActivities(prev => [...prev, ...newActivities]);
-                setHasMore(currentLength + newActivities.length < filteredActivities.length);
-                setLoading(false);
-            }, 500);
-        }
-    }, [hasMore, loading, displayedActivities, filteredActivities]);
+        setLoading(true);
+        setTimeout(() => {
+            setDisplayedActivitiesCount(prev => prev + ITEMS_PER_PAGE);
+            setLoading(false);
+        }, 500);
+    }, []);
+
+    // --- Handlers ---
+    
+    const logAdminAction = useCallback((action: AuditLogEntry['action'], targetId: string, details: string) => {
+        if (currentUser?.role !== 'admin') return;
+        const newLog: AuditLogEntry = {
+            id: `log-${Date.now()}`,
+            timestamp: new Date(),
+            adminId: currentUser.id,
+            adminName: currentUser.name,
+            action,
+            targetId,
+            details,
+            ipAddress: '127.0.0.1', // Mock IP
+            userAgent: 'WebApp' // Mock User Agent
+        };
+        setAuditLogs(prev => [newLog, ...prev].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()));
+    }, [currentUser]);
+
 
     const handleLogin = async (email: string, password?: string) => {
-        const user = users.find(u => u.email === email);
-        if (!user) {
-            throw new Error("Utilisateur ou mot de passe incorrect.");
-        }
-
-        if (user.status === 'inactive') {
-            throw new Error("Ce compte est inactif. Veuillez contacter un administrateur.");
-        }
-
-        if (user.role === 'admin') {
-            if (email === 'admin@example.com' && password === 'adminpassword') {
-                setCurrentUser(user);
+        // In a real app, this would be an API call
+        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+        if (user) {
+            if (user.status === 'deleted') {
+                throw new Error("Ce compte a été supprimé.");
+            }
+            if (user.status === 'inactive') {
+                throw new Error("Votre compte est currently inactif. Veuillez contacter un administrateur.");
+            }
+            setCurrentUser(user);
+            if (user.role === 'admin') {
                 setView({ type: 'ADMIN', section: 'dashboard' });
             } else {
-                throw new Error("Utilisateur ou mot de passe incorrect.");
+                setView({ type: 'DASHBOARD' });
             }
         } else {
-            // Simplified login for regular users (no password check)
-            setCurrentUser(user);
-            setView({ type: 'DASHBOARD' });
+            throw new Error("Email ou mot de passe invalide.");
         }
     };
 
+    const handleLogout = () => {
+        setCurrentUser(null);
+        setView({ type: 'LANDING' });
+    };
+
     const handleRegister = async (name: string, email: string, password?: string) => {
-        if (users.some(u => u.email === email)) {
-            throw new Error("Cet email est déjà utilisé.");
+        if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+            throw new Error("Un compte existe déjà avec cet email.");
         }
         const newUser: User = {
             id: `user-${Date.now()}`,
@@ -168,140 +246,188 @@ const App: React.FC = () => {
         setView({ type: 'DASHBOARD' });
     };
 
-    const handleLogout = () => {
-        setCurrentUser(null);
+    const handleForgotPasswordRequest = async (email: string) => {
+        // In a real app, this would trigger a password reset email
+        console.log(`Password reset requested for: ${email}`);
+        return `Si un compte existe pour ${email}, un email de réinitialisation a été envoyé.`;
     };
 
-    const handleJoin = (activityId: string, userId: string) => {
-        setActivities(acts => acts.map(act => act.id === activityId ? { ...act, participants: [...act.participants, userId] } : act));
+    const handleUpdateProfile = (userId: string, data: ProfileUpdateData) => {
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...data } : u));
+        if (currentUser?.id === userId) {
+            setCurrentUser(prev => prev ? { ...prev, ...data } : null);
+        }
     };
-
-    const handleLeave = (activityId: string, userId: string) => {
-        setActivities(acts => acts.map(act => act.id === activityId ? { ...act, participants: act.participants.filter(pId => pId !== userId) } : act));
-    };
-
-    const handleAddComment = (activityId: string, comment: Omit<Comment, 'id' | 'createdAt'>) => {
-        const newComment: Comment = {
-            ...comment,
-            id: `comment-${Date.now()}`,
-            createdAt: new Date(),
-        };
-        setActivities(acts => acts.map(act => act.id === activityId ? { ...act, comments: [...act.comments, newComment] } : act));
-    };
-
+    
     const handleCreateActivity = (activityData: Omit<Activity, 'id' | 'participants' | 'comments' | 'createdAt' | 'status'>) => {
         const newActivity: Activity = {
             ...activityData,
             id: `activity-${Date.now()}`,
-            participants: [],
+            participants: [activityData.organizer.id],
             comments: [],
             createdAt: new Date(),
-            status: 'pending',
+            status: 'approved', // New activities are approved by default
         };
-        setActivities(prev => [newActivity, ...prev]);
-        alert("Votre activité a été soumise pour approbation. Elle sera visible une fois validée par un administrateur.");
+        setActivities(prev => [...prev, newActivity]);
+        alert("Votre activité a été publiée avec succès et est maintenant visible !");
         setView({ type: 'DASHBOARD' });
     };
 
-    const handleUpdateProfile = (userId: string, data: ProfileUpdateData) => {
-        const updateUser = (u: User) => u.id === userId ? { ...u, ...data } : u;
-        setUsers(users.map(updateUser));
-        if (currentUser?.id === userId) {
-            setCurrentUser(updateUser(currentUser));
-        }
+    const handleJoinActivity = (activityId: string, userId: string) => {
+        setActivities(prev => prev.map(a => 
+            a.id === activityId ? { ...a, participants: [...a.participants, userId] } : a
+        ));
+    };
+
+    const handleLeaveActivity = (activityId: string, userId: string) => {
+         setActivities(prev => prev.map(a => 
+            a.id === activityId ? { ...a, participants: a.participants.filter(p => p !== userId) } : a
+        ));
+    };
+    
+    const handleAddComment = (activityId: string, comment: Omit<Comment, 'id' | 'createdAt'>) => {
+        const newComment: Comment = {
+            ...comment,
+            id: `comment-${Date.now()}`,
+            createdAt: new Date()
+        };
+        setActivities(prev => prev.map(a => 
+            a.id === activityId ? { ...a, comments: [...a.comments, newComment] } : a
+        ));
     };
 
     const handleDeleteUser = (userId: string) => {
-        setUsers(prev => prev.filter(u => u.id !== userId));
-        setActivities(prevActivities => {
-            const activitiesToKeep = prevActivities.filter(act => act.organizer.id !== userId);
-            return activitiesToKeep.map(act => ({
-                ...act,
-                participants: act.participants.filter(pId => pId !== userId),
-                comments: act.comments.filter(c => c.author.id !== userId)
-            }));
-        });
+        const user = users.find(u => u.id === userId);
+        if (!user) return;
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: 'deleted' } : u));
+        logAdminAction('USER_SOFT_DELETE', userId, `Utilisateur marqué comme supprimé : ${user.name} (${user.email})`);
     };
 
+    const handleUpdateUserStatus = (userId: string, status: User['status']) => {
+        const user = users.find(u => u.id === userId);
+        if (!user) return;
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, status } : u));
+        
+        if(user.status === 'deleted' && status === 'inactive') {
+             logAdminAction('USER_RESTORE', userId, `Utilisateur restauré : ${user.name}. Statut défini sur 'inactif'.`);
+        } else {
+            logAdminAction('USER_STATUS_UPDATE', userId, `Statut de ${user.name} mis à jour à : ${status}`);
+        }
+    };
+
+     const handleUpdateUserRole = (userId: string, role: 'admin' | 'member') => {
+        const user = users.find(u => u.id === userId);
+        if (!user) return;
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u));
+        logAdminAction('USER_ROLE_UPDATE', userId, `Rôle de ${user.name} mis à jour à : ${role}`);
+    };
+    
     const handleDeleteActivity = (activityId: string) => {
+        const activity = activities.find(a => a.id === activityId);
         setActivities(prev => prev.filter(a => a.id !== activityId));
+        if(activity) {
+            logAdminAction('ACTIVITY_DELETE', activityId, `Activité supprimée : "${activity.title}"`);
+        }
     };
 
     const handleApproveActivity = (activityId: string) => {
-        setActivities(prev => prev.map(act => act.id === activityId ? { ...act, status: 'approved' } : act));
+        const activity = activities.find(a => a.id === activityId);
+        setActivities(prev => prev.map(a => a.id === activityId ? { ...a, status: 'approved' } : a));
+        if(activity) {
+             logAdminAction('ACTIVITY_APPROVE', activityId, `Activité approuvée : "${activity.title}"`);
+        }
     };
 
-    const handleUpdateUserStatus = (userId: string, status: 'active' | 'inactive') => {
-        setUsers(prevUsers => prevUsers.map(user => user.id === userId ? { ...user, status } : user));
+    // FIX: Moved dashboardProps declaration before renderContent to fix usage before declaration error.
+    const dashboardProps = {
+        activities: paginatedActivities,
+        setView,
+        currentUser,
+        searchQuery, setSearchQuery,
+        locationFilter, setLocationFilter,
+        dateFilter, setDateFilter,
+        categoryFilter, setCategoryFilter,
+        statusFilter, setStatusFilter,
+        onLoadMore: handleLoadMore,
+        hasMore: hasMoreActivities,
+        loading,
     };
 
-
-    if (!currentUser) {
-         if (view.type === 'ADMIN_LOGIN' || (view.type === 'ADMIN' && currentUser?.role !== 'admin')) {
-            return <AdminLoginPage onLogin={handleLogin} setView={setView} />;
+    const renderContent = () => {
+        if (!currentUser) {
+            switch(view.type) {
+                case 'AUTH':
+                    return <AuthPage 
+                        initialView={view.initialView} 
+                        onLogin={handleLogin} 
+                        onRegister={handleRegister} 
+                        onForgotPasswordRequest={handleForgotPasswordRequest}
+                        setView={setView} 
+                    />;
+                case 'ADMIN_LOGIN':
+                    return <AdminLoginPage onLogin={handleLogin} setView={setView} />;
+                case 'LANDING':
+                default:
+                    return <LandingPage setView={setView} />;
+            }
         }
-        return <LandingPage onLogin={handleLogin} onRegister={handleRegister} onForgotPasswordRequest={async () => "token"} onResetPassword={async () => {}} />;
-    }
 
-    const renderView = () => {
-        // Guard: If a logged-in user is not an admin, redirect them to the dashboard
-        // if they try to access any admin-related pages.
-        if (currentUser.role !== 'admin' && (view.type === 'ADMIN' || view.type === 'ADMIN_LOGIN')) {
-            return <Dashboard 
-                activities={displayedActivities} 
-                setView={setView} 
-                searchQuery={searchQuery} 
-                setSearchQuery={setSearchQuery} 
-                filterNext7Days={filterNext7Days} 
-                setFilterNext7Days={setFilterNext7Days} 
-                onLoadMore={handleLoadMore} 
-                hasMore={hasMore} 
-                loading={loading} 
-            />;
-        }
-    
         switch (view.type) {
-            case 'ACTIVITY_DETAIL':
+            case 'ACTIVITY_DETAIL': {
                 const activity = activities.find(a => a.id === view.activityId);
-                return activity ? <ActivityDetail activity={activity} currentUser={currentUser} users={users} onJoin={handleJoin} onLeave={handleLeave} onAddComment={handleAddComment} onBack={() => setView({type: 'DASHBOARD'})} setView={setView} /> : <div>Activité non trouvée</div>;
+                return activity ? (
+                    <ActivityDetail
+                        activity={activity}
+                        currentUser={currentUser}
+                        users={users}
+                        onJoin={handleJoinActivity}
+                        onLeave={handleLeaveActivity}
+                        onAddComment={handleAddComment}
+                        onBack={() => setView({ type: 'DASHBOARD' })}
+                        setView={setView}
+                    />
+                ) : <Dashboard {...dashboardProps} />;
+            }
             case 'CREATE_ACTIVITY':
-                return <CreateActivityForm currentUser={currentUser} onCreateActivity={handleCreateActivity} onCancel={() => setView({type: 'DASHBOARD'})} />;
+                return <CreateActivityForm currentUser={currentUser} onCreateActivity={handleCreateActivity} onCancel={() => setView({ type: 'DASHBOARD' })} />;
             case 'PROFILE':
-                return <ProfilePage currentUser={currentUser} onUpdateProfile={handleUpdateProfile} onBack={() => setView({type: 'DASHBOARD'})} />;
-            case 'USER_PROFILE':
+                return <ProfilePage currentUser={currentUser} onUpdateProfile={handleUpdateProfile} onBack={() => setView({ type: 'DASHBOARD' })} />;
+             case 'USER_PROFILE': {
                 const user = users.find(u => u.id === view.userId);
-                const lastView: View = { type: 'DASHBOARD' }; // A simple back logic
-                return user ? <UserProfilePage user={user} onBack={() => setView(lastView)} /> : <div>Utilisateur non trouvé</div>;
-            case 'ADMIN_LOGIN':
-                // If we reach here, the user MUST be an admin (due to the guard above).
-                // An admin seeing a login page should be redirected to their panel.
-                return <AdminPanel users={users} activities={activities} onDeleteUser={handleDeleteUser} onDeleteActivity={handleDeleteActivity} onApproveActivity={handleApproveActivity} onUpdateUserStatus={handleUpdateUserStatus} currentSection={'dashboard'} setView={setView} currentUser={currentUser} />;
+                return user ? (
+                    <UserProfilePage user={user} onBack={() => setView({ type: 'DASHBOARD' })} />
+                ) : <Dashboard {...dashboardProps} />;
+             }
             case 'ADMIN':
-                 // The guard already ensures only admins can reach this.
-                 return <AdminPanel users={users} activities={activities} onDeleteUser={handleDeleteUser} onDeleteActivity={handleDeleteActivity} onApproveActivity={handleApproveActivity} onUpdateUserStatus={handleUpdateUserStatus} currentSection={view.section} setView={setView} currentUser={currentUser} />;
+                return currentUser.role === 'admin' ? 
+                    <AdminPanel 
+                        users={users} 
+                        activities={activities}
+                        auditLogs={auditLogs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())}
+                        onDeleteUser={handleDeleteUser} 
+                        onDeleteActivity={handleDeleteActivity}
+                        onApproveActivity={handleApproveActivity}
+                        onUpdateUserStatus={handleUpdateUserStatus}
+                        onUpdateUserRole={handleUpdateUserRole}
+                        currentSection={view.section}
+                        setView={setView}
+                        currentUser={currentUser}
+                    /> : <Dashboard {...dashboardProps} />;
             case 'DASHBOARD':
             default:
-                return <Dashboard 
-                    activities={displayedActivities} 
-                    setView={setView} 
-                    searchQuery={searchQuery} 
-                    setSearchQuery={setSearchQuery} 
-                    filterNext7Days={filterNext7Days} 
-                    setFilterNext7Days={setFilterNext7Days} 
-                    onLoadMore={handleLoadMore} 
-                    hasMore={hasMore} 
-                    loading={loading} 
-                />;
+                return <Dashboard {...dashboardProps} />;
         }
     };
-
+    
     return (
-        <div className="bg-light dark:bg-dark">
-            <Header currentUser={currentUser} setView={setView} onLogout={handleLogout} />
+        <>
+            {view.type !== 'LANDING' && view.type !== 'AUTH' && view.type !== 'ADMIN_LOGIN' && (
+                <Header currentUser={currentUser} setView={setView} onLogout={handleLogout} />
+            )}
             <main>
-                {renderView()}
+                {renderContent()}
             </main>
-        </div>
+        </>
     );
 };
 

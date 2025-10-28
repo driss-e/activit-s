@@ -1,15 +1,22 @@
 import React, { useRef, useCallback } from 'react';
-import type { Activity, View } from '../types';
+import type { Activity, View, User, Category } from '../types';
 import { ActivityCard } from './ActivityCard';
-import { SearchIcon, InboxIcon } from './icons';
+import { SearchIcon, InboxIcon, LocationIcon } from './icons';
 
 interface DashboardProps {
   activities: Activity[];
   setView: (view: View) => void;
+  currentUser: User | null;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  filterNext7Days: boolean;
-  setFilterNext7Days: (value: boolean) => void;
+  locationFilter: string;
+  setLocationFilter: (value: string) => void;
+  dateFilter: 'all' | 'today' | 'this_week' | 'this_month';
+  setDateFilter: (value: 'all' | 'today' | 'this_week' | 'this_month') => void;
+  categoryFilter: Category | 'all';
+  setCategoryFilter: (value: Category | 'all') => void;
+  statusFilter: 'all' | 'approved' | 'pending';
+  setStatusFilter: (value: 'all' | 'approved' | 'pending') => void;
   onLoadMore: () => void;
   hasMore: boolean;
   loading: boolean;
@@ -18,10 +25,17 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({
   activities,
   setView,
+  currentUser,
   searchQuery,
   setSearchQuery,
-  filterNext7Days,
-  setFilterNext7Days,
+  locationFilter,
+  setLocationFilter,
+  dateFilter,
+  setDateFilter,
+  categoryFilter,
+  setCategoryFilter,
+  statusFilter,
+  setStatusFilter,
   onLoadMore,
   hasMore,
   loading
@@ -38,6 +52,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
     if (node) observer.current.observe(node);
   }, [hasMore, onLoadMore, loading]);
 
+  const formInputClasses = "block w-full pl-10 pr-3 py-2 border border-stone-300 rounded-lg leading-5 bg-white placeholder-stone-500 focus:outline-none focus:placeholder-stone-400 focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm dark:bg-stone-700 dark:border-stone-600 dark:text-stone-200 dark:placeholder-stone-400";
+  const selectClasses = "block w-full px-3 py-2 border border-stone-300 rounded-lg leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm dark:bg-stone-700 dark:border-stone-600 dark:text-stone-200";
+
+  const hasActiveFilters = searchQuery || locationFilter || dateFilter !== 'all' || categoryFilter !== 'all' || (currentUser?.role === 'admin' && statusFilter !== 'all');
 
   return (
     <div className="bg-light min-h-screen dark:bg-dark">
@@ -48,33 +66,81 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm mb-8 dark:bg-stone-800 sticky top-[65px] z-40">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="relative flex-grow">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-center">
+                {/* Main Search */}
+                <div className="relative lg:col-span-1">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <SearchIcon className="h-5 w-5 text-stone-400 dark:text-stone-500" />
                     </div>
                     <input
                         type="text"
-                        placeholder="Rechercher une randonnée, un musée, un jeu..."
+                        placeholder="Rechercher..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-2 border border-stone-300 rounded-lg leading-5 bg-white placeholder-stone-500 focus:outline-none focus:placeholder-stone-400 focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm dark:bg-stone-700 dark:border-stone-600 dark:text-stone-200 dark:placeholder-stone-400"
+                        className={formInputClasses}
                     />
                 </div>
-                <div className="flex-shrink-0 flex items-center space-x-3 bg-stone-100 p-1 rounded-lg dark:bg-stone-900/50">
-                    <label 
-                        htmlFor="filter-7-days" 
-                        className="text-sm text-stone-700 dark:text-stone-300 cursor-pointer pl-2">
-                        7 prochains jours
-                    </label>
+
+                {/* Location Search */}
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <LocationIcon className="h-5 w-5 text-stone-400 dark:text-stone-500" />
+                    </div>
                     <input
-                        id="filter-7-days"
-                        type="checkbox"
-                        checked={filterNext7Days}
-                        onChange={(e) => setFilterNext7Days(e.target.checked)}
-                        className="h-4 w-4 rounded border-stone-300 text-primary focus:ring-primary dark:bg-stone-600 dark:border-stone-500"
+                        type="text"
+                        placeholder="Lieu..."
+                        value={locationFilter}
+                        onChange={(e) => setLocationFilter(e.target.value)}
+                        className={formInputClasses}
                     />
                 </div>
+
+                {/* Date Filter */}
+                <div>
+                    <select
+                        value={dateFilter}
+                        onChange={(e) => setDateFilter(e.target.value as any)}
+                        className={selectClasses}
+                        aria-label="Filtrer par date"
+                    >
+                        <option value="all">Toutes les dates</option>
+                        <option value="today">Aujourd'hui</option>
+                        <option value="this_week">Cette semaine</option>
+                        <option value="this_month">Ce mois-ci</option>
+                    </select>
+                </div>
+
+                {/* Category Filter */}
+                <div>
+                    <select
+                        value={categoryFilter}
+                        onChange={(e) => setCategoryFilter(e.target.value as any)}
+                        className={selectClasses}
+                        aria-label="Filtrer par catégorie"
+                    >
+                        <option value="all">Toutes les catégories</option>
+                        <option value="Outdoors">Plein air</option>
+                        <option value="Sports">Sports</option>
+                        <option value="Culture">Culture</option>
+                        <option value="Social">Social</option>
+                    </select>
+                </div>
+
+                {/* Status Filter (Admin only) */}
+                {currentUser?.role === 'admin' && (
+                    <div>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value as any)}
+                            className={selectClasses}
+                            aria-label="Filtrer par statut"
+                        >
+                            <option value="all">Tous les statuts</option>
+                            <option value="approved">Approuvées</option>
+                            <option value="pending">En attente</option>
+                        </select>
+                    </div>
+                )}
             </div>
         </div>
 
@@ -124,7 +190,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <h3 className="mt-4 text-xl font-semibold text-stone-800 dark:text-stone-200">Aucun résultat trouvé</h3>
             <p className="text-stone-500 mt-2 dark:text-stone-400">
-              {searchQuery || filterNext7Days ? "Essayez de modifier vos filtres ou votre recherche." : "Il n'y a pas d'activités pour le moment."}
+              {hasActiveFilters
+                ? "Essayez de modifier vos filtres ou votre recherche." 
+                : "Il n'y a pas d'activités pour le moment."
+              }
             </p>
           </div>
         )}

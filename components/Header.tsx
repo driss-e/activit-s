@@ -3,6 +3,7 @@ import React from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import type { User, View } from '../types';
 import { SunIcon, MoonIcon } from './icons';
+import { Logo } from './Logo';
 
 interface HeaderProps {
   currentUser: User | null;
@@ -18,12 +19,9 @@ export const Header: React.FC<HeaderProps> = ({ currentUser, setView, onLogout }
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex-shrink-0">
-            <h1 
-              className="text-2xl font-bold font-heading text-primary cursor-pointer"
-              onClick={() => setView({ type: 'DASHBOARD' })}
-            >
-              SortieEnsemble
-            </h1>
+            <div onClick={() => setView({ type: 'DASHBOARD' })} className="cursor-pointer">
+                <Logo className="h-8 w-auto text-stone-800 dark:text-stone-100" />
+            </div>
           </div>
           <div className="flex items-center space-x-4">
             <button
