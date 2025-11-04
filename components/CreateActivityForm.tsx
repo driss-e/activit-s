@@ -29,7 +29,7 @@ export const CreateActivityForm: React.FC<CreateActivityFormProps> = ({ currentU
             return;
         }
 
-        filesArray.forEach(file => {
+        filesArray.forEach((file: File) => {
             if (file.size > 2 * 1024 * 1024) { // 2MB limit
                 alert(`Le fichier ${file.name} est trop volumineux (max 2 Mo).`);
                 return;

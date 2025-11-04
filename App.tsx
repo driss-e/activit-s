@@ -12,6 +12,8 @@ import { AdminLoginPage } from './components/AdminLoginPage';
 import { AuthPage } from './components/AuthPage';
 import type { User, Activity, View, Comment, ProfileUpdateData, Category, AuditLogEntry } from './types';
 import { initialActivities, initialUsers } from './data';
+import { auth } from './firebase';
+import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -63,15 +65,8 @@ const App: React.FC = () => {
     const [users, setUsers] = useState<User[]>(() => parseUsers(localStorage.getItem('users')));
     const [activities, setActivities] = useState<Activity[]>(() => parseActivities(localStorage.getItem('activities')));
     const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(() => parseAuditLogs(localStorage.getItem('auditLogs')));
-    const [currentUser, setCurrentUser] = useState<User | null>(() => {
-        const storedUser = localStorage.getItem('currentUser');
-        if (storedUser) {
-            const user = JSON.parse(storedUser);
-            // find the full user object from the users list to ensure data is fresh
-            return users.find(u => u.id === user.id) || null;
-        }
-        return null;
-    });
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [authLoading, setAuthLoading] = useState(true);
     
     const [view, setView] = useState<View>({ type: 'LANDING' });
 
@@ -90,13 +85,36 @@ const App: React.FC = () => {
     useEffect(() => { localStorage.setItem('users', JSON.stringify(users)); }, [users]);
     useEffect(() => { localStorage.setItem('activities', JSON.stringify(activities)); }, [activities]);
     useEffect(() => { localStorage.setItem('auditLogs', JSON.stringify(auditLogs)); }, [auditLogs]);
+    
+    // Listen to Firebase auth state changes
     useEffect(() => {
-        if (currentUser) {
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        } else {
-            localStorage.removeItem('currentUser');
-        }
-    }, [currentUser]);
+        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+            if (firebaseUser) {
+                const appUser = users.find(u => u.id === firebaseUser.uid);
+                if (appUser) {
+                     if (appUser.status === 'deleted') {
+                        alert("Ce compte a été supprimé.");
+                        signOut(auth);
+                    } else if (appUser.status === 'inactive') {
+                        alert("Votre compte est inactif. Veuillez contacter un administrateur.");
+                        signOut(auth);
+                    } else {
+                        setCurrentUser(appUser);
+                        if (view.type === 'LANDING' || view.type === 'AUTH' || view.type === 'ADMIN_LOGIN') {
+                            setView({ type: 'DASHBOARD' });
+                        }
+                    }
+                }
+                // If appUser is not found, it might be a new registration.
+                // The `users` dependency array will cause this effect to re-run once the user is added.
+            } else {
+                setCurrentUser(null);
+            }
+            setAuthLoading(false);
+        });
+        return () => unsubscribe();
+    }, [users, view.type]);
+
 
      // Reset filters and scroll when view changes
     useEffect(() => {
@@ -201,55 +219,25 @@ const App: React.FC = () => {
         setAuditLogs(prev => [newLog, ...prev].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()));
     }, [currentUser]);
 
-
-    const handleLogin = async (email: string, password?: string) => {
-        // In a real app, this would be an API call
-        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-        if (user) {
-            if (user.status === 'deleted') {
-                throw new Error("Ce compte a été supprimé.");
-            }
-            if (user.status === 'inactive') {
-                throw new Error("Votre compte est currently inactif. Veuillez contacter un administrateur.");
-            }
-            setCurrentUser(user);
-            if (user.role === 'admin') {
-                setView({ type: 'ADMIN', section: 'dashboard' });
-            } else {
-                setView({ type: 'DASHBOARD' });
-            }
-        } else {
-            throw new Error("Email ou mot de passe invalide.");
-        }
-    };
-
     const handleLogout = () => {
-        setCurrentUser(null);
+        signOut(auth).catch(error => console.error("Logout error", error));
         setView({ type: 'LANDING' });
     };
 
-    const handleRegister = async (name: string, email: string, password?: string) => {
-        if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+    const handleRegister = async (firebaseUser: FirebaseUser, name: string) => {
+        if (users.some(u => u.email.toLowerCase() === firebaseUser.email!.toLowerCase())) {
             throw new Error("Un compte existe déjà avec cet email.");
         }
         const newUser: User = {
-            id: `user-${Date.now()}`,
+            id: firebaseUser.uid,
             name,
-            email,
-            avatar: `https://i.pravatar.cc/150?u=${email}`,
+            email: firebaseUser.email!,
+            avatar: `https://i.pravatar.cc/150?u=${firebaseUser.email}`,
             role: 'member',
             status: 'active',
             createdAt: new Date(),
         };
         setUsers(prev => [...prev, newUser]);
-        setCurrentUser(newUser);
-        setView({ type: 'DASHBOARD' });
-    };
-
-    const handleForgotPasswordRequest = async (email: string) => {
-        // In a real app, this would trigger a password reset email
-        console.log(`Password reset requested for: ${email}`);
-        return `Si un compte existe pour ${email}, un email de réinitialisation a été envoyé.`;
     };
 
     const handleUpdateProfile = (userId: string, data: ProfileUpdateData) => {
@@ -338,7 +326,6 @@ const App: React.FC = () => {
         }
     };
 
-    // FIX: Moved dashboardProps declaration before renderContent to fix usage before declaration error.
     const dashboardProps = {
         activities: paginatedActivities,
         setView,
@@ -354,18 +341,27 @@ const App: React.FC = () => {
     };
 
     const renderContent = () => {
+        if (authLoading) {
+            return (
+                <div className="h-screen w-screen flex items-center justify-center bg-light dark:bg-dark">
+                    <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            );
+        }
+
         if (!currentUser) {
             switch(view.type) {
                 case 'AUTH':
                     return <AuthPage 
                         initialView={view.initialView} 
-                        onLogin={handleLogin} 
                         onRegister={handleRegister} 
-                        onForgotPasswordRequest={handleForgotPasswordRequest}
                         setView={setView} 
                     />;
                 case 'ADMIN_LOGIN':
-                    return <AdminLoginPage onLogin={handleLogin} setView={setView} />;
+                    return <AdminLoginPage onLogin={() => {}} setView={setView} />;
                 case 'LANDING':
                 default:
                     return <LandingPage setView={setView} />;
@@ -421,7 +417,7 @@ const App: React.FC = () => {
     
     return (
         <>
-            {view.type !== 'LANDING' && view.type !== 'AUTH' && view.type !== 'ADMIN_LOGIN' && (
+            {view.type !== 'LANDING' && view.type !== 'AUTH' && view.type !== 'ADMIN_LOGIN' && !authLoading && (
                 <Header currentUser={currentUser} setView={setView} onLogout={handleLogout} />
             )}
             <main>

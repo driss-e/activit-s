@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import type { View } from '../types';
 import { Logo } from './Logo';
+import { auth } from '../firebase';
+import { 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    sendPasswordResetEmail,
+    type User as FirebaseUser
+} from 'firebase/auth';
 
 interface AuthPageProps {
   initialView: 'login' | 'register' | 'forgot-password';
-  onLogin: (email: string, password?: string) => Promise<void>;
-  onRegister: (name: string, email: string, password?: string) => Promise<void>;
-  onForgotPasswordRequest: (email: string) => Promise<string>;
+  onRegister: (firebaseUser: FirebaseUser, name: string) => Promise<void>;
   setView: (view: View) => void;
 }
 
@@ -14,9 +19,7 @@ type AuthView = 'login' | 'register' | 'forgot-password';
 
 export const AuthPage: React.FC<AuthPageProps> = ({
   initialView,
-  onLogin,
   onRegister,
-  onForgotPasswordRequest,
   setView,
 }) => {
     const [authView, setAuthView] = useState<AuthView>(initialView);
@@ -26,13 +29,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         setAuthView(initialView);
     }, [initialView]);
 
     const formInputClasses = "mt-1 block w-full px-3 py-2 border border-stone-300 rounded-lg shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-stone-700 dark:border-stone-600 dark:text-stone-200";
-    const primaryButtonClasses = "w-full py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus";
+    const primaryButtonClasses = "w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-focus disabled:bg-primary/50 disabled:cursor-not-allowed";
     const secondaryButtonClasses = "font-medium text-primary hover:text-primary-hover";
 
 
@@ -40,22 +44,46 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         e.preventDefault();
         setError(null);
         setMessage(null);
+        setIsLoading(true);
 
         try {
             if (authView === 'login') {
-                await onLogin(email, password);
+                await signInWithEmailAndPassword(auth, email, password);
+                // onAuthStateChanged in App.tsx will handle redirection
             } else if (authView === 'register') {
                 if (password !== confirmPassword) {
                     throw new Error('Les mots de passe ne correspondent pas.');
                 }
-                await onRegister(name, email, password);
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await onRegister(userCredential.user, name);
+                // onAuthStateChanged in App.tsx will handle redirection
             } else if (authView === 'forgot-password') {
-                await onForgotPasswordRequest(email);
+                await sendPasswordResetEmail(auth, email);
                 setMessage(`Si un compte existe pour ${email}, un email de réinitialisation a été envoyé.`);
                 setAuthView('login');
             }
         } catch (err: any) {
-             setError(err.message);
+             switch (err.code) {
+                case 'auth/user-not-found':
+                case 'auth/wrong-password':
+                case 'auth/invalid-credential':
+                    setError('Email ou mot de passe invalide.');
+                    break;
+                case 'auth/email-already-in-use':
+                    setError('Un compte existe déjà avec cet email.');
+                    break;
+                case 'auth/weak-password':
+                    setError('Le mot de passe doit contenir au moins 6 caractères.');
+                    break;
+                case 'auth/invalid-email':
+                    setError('Veuillez entrer une adresse email valide.');
+                    break;
+                default:
+                    setError(err.message || 'Une erreur est survenue.');
+                    break;
+            }
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -70,8 +98,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                             <label className="block text-sm font-medium text-stone-700 dark:text-stone-300">Email</label>
                             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className={formInputClasses}/>
                         </div>
-                        <button type="submit" className={primaryButtonClasses}>
-                            Envoyer le lien
+                        <button type="submit" className={primaryButtonClasses} disabled={isLoading}>
+                            {isLoading ? 'Envoi...' : 'Envoyer le lien'}
                         </button>
                          <div className="text-sm text-center">
                             <button type="button" onClick={() => setAuthView('login')} className={secondaryButtonClasses}>
@@ -100,8 +128,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                             <label className="block text-sm font-medium text-stone-700 dark:text-stone-300">Confirmer le mot de passe</label>
                             <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required className={formInputClasses}/>
                         </div>
-                        <button type="submit" className={primaryButtonClasses}>
-                            S'inscrire
+                        <button type="submit" className={primaryButtonClasses} disabled={isLoading}>
+                            {isLoading ? 'Création...' : "S'inscrire"}
                         </button>
                         <div className="text-sm text-center">
                             <p className="text-stone-600 dark:text-stone-400">
@@ -133,8 +161,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                                 </button>
                             </div>
                         </div>
-                        <button type="submit" className={primaryButtonClasses}>
-                            Connexion
+                        <button type="submit" className={primaryButtonClasses} disabled={isLoading}>
+                            {isLoading ? 'Connexion...' : 'Connexion'}
                         </button>
                         <div className="text-sm text-center">
                              <p className="text-stone-600 dark:text-stone-400">
